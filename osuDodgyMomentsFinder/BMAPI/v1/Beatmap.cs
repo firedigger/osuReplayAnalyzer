@@ -77,7 +77,7 @@ namespace BMAPI.v1
                 p_CircleSize = value;
                 foreach (CircleObject hO in HitObjects)
                 {
-                    hO.Radius = 40 - 4 * (value - 2);
+                    hO.Radius = (float)(54.42 - 4.48 * value);
                 }
             }
         }
@@ -343,7 +343,7 @@ namespace BMAPI.v1
                         string[] reSplit = line.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                         CircleObject newObject = new CircleObject
                         {
-                            Radius = 40 - 4 * (Info.CircleSize - 2),
+                            Radius = (float)(54.42 - 4.48 * Info.CircleSize),
                             Location = new Point2(Convert.ToInt32(reSplit[0]), Convert.ToInt32(reSplit[1])),
                             StartTime = (float)Convert.ToDouble(reSplit[2]),
                             Type = (HitObjectType)Convert.ToInt32(reSplit[3]),

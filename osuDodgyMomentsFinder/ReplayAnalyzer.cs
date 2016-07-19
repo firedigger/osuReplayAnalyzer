@@ -44,36 +44,37 @@ namespace osuDodgyMomentsFinder
             {
                 CircleObject note = beatmap.HitObjects[i];
 
-                //if (note.Type == HitObjectType.Circle)
-                //{
-                    for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
+                if ((note.Type & HitObjectType.Circle) > 0)
+                    continue;
+
+                for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
+                {
+                    ReplayFrame frame = replay.ReplayFrames[j];
+
+                    if (frame.Keys == Keys.None)
+                        pressReady = true;
+
+                    if (frame.Keys != Keys.None && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && pressReady)
                     {
-                        ReplayFrame frame = replay.ReplayFrames[j];
-
-                        if (frame.Keys == Keys.None)
-                            pressReady = true;
-
-                        if (frame.Keys != Keys.None && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && pressReady)
-                        {
-                            pressReady = false;
-                            hits.Add(new KeyValuePair<CircleObject, ReplayFrame>(note, frame));
-                            keyIndex = j + 1;
-                            break;
-                        }
-
-                        if (frame.Keys != Keys.None)
-                            pressReady = false;
-
+                        pressReady = false;
+                        hits.Add(new KeyValuePair<CircleObject, ReplayFrame>(note, frame));
+                        keyIndex = j + 1;
+                        break;
                     }
+
+                    if (frame.Keys != Keys.None)
+                        pressReady = false;
+
+                }
             }
 
-                /*if (note.Type == HitObjectType.Slider)
-                {
-                    SliderObject slider = (SliderObject)note;
+            /*if (note.Type == HitObjectType.Slider)
+            {
+                SliderObject slider = (SliderObject)note;
 
-                    double startTime = note.StartTime;
-                    double endTime = slider.SegmentEndTime;
-                }*/
+                double startTime = note.StartTime;
+                double endTime = slider.SegmentEndTime;
+            }*/
             //}
         }
 
@@ -92,29 +93,35 @@ namespace osuDodgyMomentsFinder
 
             associateHits();
         }
- 
+
+        public double findBestPixelHit()
+        {
+            return this.hits.Max((pair) => Utils.pixelPerfectHitFactor(pair.Value, pair.Key));
+        }
 
         public List<double> findPixelPerfectHits(double threshold)
         {
             List<double> result = new List<double>();
 
 
-            foreach(var pair in this.hits)
+            foreach (var pair in this.hits)
             {
                 double factor = Utils.pixelPerfectHitFactor(pair.Value, pair.Key);
 
                 if (factor >= threshold)
+                {
                     result.Add(pair.Key.StartTime);
+                }
             }
 
 
             return result;
-        } 
+        }
 
         public double unstableRate()
         {
 
-            List<float> values = this.hits.ConvertAll((pair) => Math.Abs(pair.Value.Time - pair.Key.StartTime));
+            List<float> values = this.hits.ConvertAll((pair) => pair.Value.Time - pair.Key.StartTime);
 
             double avg = values.Average();
             return 10 * Math.Sqrt(values.Average(v => Math.Pow(v - avg, 2)));
