@@ -130,6 +130,8 @@ namespace BMAPI.v1
                     Parse(beatmapFile);
                 }
             }
+
+            recalculateStackCoordinates();
         }
 
         private void Parse(string bm)
@@ -629,6 +631,70 @@ namespace BMAPI.v1
             }
         }
 
+        private void recalculateStackCoordinates()
+        {
+            double ApproachTimeWindow = 1800 - 120 * ApproachRate;
+            double stackTimeWindow = (ApproachTimeWindow * (StackLeniency.HasValue ? StackLeniency.Value : 7));
+
+            //Console.WriteLine(ApproachTimeWindow);
+            //Console.WriteLine(StackLeniency);
+            //Console.WriteLine(stackTimeWindow);
+
+            Dictionary<int, Point2> toChange = new Dictionary<int, Point2>();
+            for(int i = HitObjects.Count - 1; i >= 0; --i)
+            {
+                if (HitObjects[i].Location == new Point2(360,128))
+                {
+                    int u = 0;
+                }
+
+                for (int j = i - 1; j >= 0 ; --j)
+                {
+                    if (HitObjects[i].StartTime - HitObjects[j].StartTime <= stackTimeWindow)
+                    {
+                        if (HitObjects[i].Location == HitObjects[j].Location)
+                        {
+                            var newPoint = toChange.ContainsKey(i) ? new Point2(toChange[i].X - 4, toChange[i].Y - 4) : new Point2(HitObjects[i].Location.X - 4, HitObjects[i].Location.Y - 4);
+                            toChange.Add(j, newPoint);
+                            //HitObjects[j].Location = new Point2(HitObjects[i].Location.X - 4, HitObjects[i].Location.Y - 4);
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+            foreach(var pair in toChange)
+            {
+                HitObjects[pair.Key].Location = pair.Value;
+            }
+
+
+
+            /*List<CircleObject> queue = new List<CircleObject>();
+            foreach (CircleObject c in HitObjects)
+            {
+                foreach (CircleObject cs in queue)
+                {
+                    if (c.StartTime - cs.StartTime < stackTimeWindow)
+                    {
+                        queue.Add(c);
+                        if (c.Location == cs.Location)
+                        {
+                            c.Location = new Point2(c.Location.X + 4, c.Location.Y + 4);
+                            queue.Remove(cs);
+                            break;
+                        }
+                        else
+                        {
+                            queue.Remove(cs);
+                        }
+                    }
+                }
+            }*/
+        }
         
     }
 }
