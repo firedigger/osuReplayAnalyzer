@@ -20,14 +20,14 @@ namespace osuDodgyMomentsFinder
             //Console.WriteLine(analyzer.hits.Count);
             //Console.WriteLine(beatmap.HitObjects.Count);
 
-            //Console.WriteLine(analyzer.findBestPixelHit());
+            Console.WriteLine(analyzer.findBestPixelHit());
 
-            var pixelPerfectHits = analyzer.findPixelPerfectHits(0.95);
+            var pixelPerfectHits = analyzer.findSortedPixelPerfectHits(10);
 
             Console.WriteLine(pixelPerfectHits.Count);
             foreach (var hit in pixelPerfectHits)
             {
-                Console.WriteLine(hit);
+                Console.WriteLine(hit.Key + " " + hit.Value);
             }
 
             //Console.WriteLine(analyzer.hits.Count);
@@ -40,6 +40,9 @@ namespace osuDodgyMomentsFinder
                     break;
                 Console.WriteLine(Utils.printInfo(hit.Value, hit.Key));
             }*/
+
+            //beatmap.Save("new.osu");
+
 
             Console.ReadKey();
 

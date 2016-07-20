@@ -33,6 +33,16 @@ namespace osuDodgyMomentsFinder
         //The list of pair of a <hit, object hit>
         public List<KeyValuePair<CircleObject, ReplayFrame>> hits { get; private set; }
 
+
+        private void applyHardrock()
+        {
+            replay.AxisFlip = true;
+            beatmap.CircleSize = beatmap.CircleSize * 1.3f;
+            this.replay.ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
+            Console.WriteLine(beatmap.CircleSize);
+        }
+
+
         private void associateHits()
         {
             hits = new List<KeyValuePair<CircleObject, ReplayFrame>>();
@@ -41,16 +51,21 @@ namespace osuDodgyMomentsFinder
             bool pressReady = true;
             Keys lastKey = Keys.None;
 
+            if ((replay.Mods & Mods.HardRock) > 0)
+            {
+                applyHardrock();
+            }
+
+
             for (int i = 0; i < beatmap.HitObjects.Count; ++i)
             {
                 CircleObject note = beatmap.HitObjects[i];
                 bool flag = false;
 
-                if (i == 297)
+                if (i == 209)
                 {
                     int u = 0;
                 }
-
 
                 if ((note.Type & HitObjectType.Spinner) > 0)
                     continue;
@@ -59,7 +74,7 @@ namespace osuDodgyMomentsFinder
                 {
                     ReplayFrame frame = replay.ReplayFrames[j];
 
-                    if (frame.Keys != lastKey)
+                    if (((frame.Keys & lastKey) ^ frame.Keys) > 0)
                         pressReady = true;
 
                     if (frame.Keys != Keys.None && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && pressReady)
@@ -122,7 +137,6 @@ namespace osuDodgyMomentsFinder
         {
             List<double> result = new List<double>();
 
-
             foreach (var pair in this.hits)
             {
                 double factor = Utils.pixelPerfectHitFactor(pair.Value, pair.Key);
@@ -137,10 +151,20 @@ namespace osuDodgyMomentsFinder
             return result;
         }
 
-        /*public List<double> findSortedPixelPerfectHits(int maxSize)
+        public List<KeyValuePair<double, double>> findSortedPixelPerfectHits(int maxSize)
         {
+            List<KeyValuePair<double, double>> result = new List<KeyValuePair<double, double>>();
 
-        }*/
+            foreach (var pair in this.hits)
+            {
+                double factor = Utils.pixelPerfectHitFactor(pair.Value, pair.Key);
+                result.Add(new KeyValuePair<double, double>(factor, pair.Key.StartTime));
+            }
+            result.Sort((a, b) => b.Key.CompareTo(a.Key));
+            
+
+            return result.GetRange(0,maxSize);
+        }
 
 
 
