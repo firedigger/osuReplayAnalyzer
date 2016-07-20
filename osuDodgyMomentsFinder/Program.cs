@@ -17,9 +17,12 @@ namespace osuDodgyMomentsFinder
 
             ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
 
+            //Console.WriteLine(analyzer.hits.Count);
+            //Console.WriteLine(beatmap.HitObjects.Count);
+
             //Console.WriteLine(analyzer.findBestPixelHit());
 
-            var pixelPerfectHits = analyzer.findPixelPerfectHits(0.9878);
+            var pixelPerfectHits = analyzer.findPixelPerfectHits(0.95);
 
             Console.WriteLine(pixelPerfectHits.Count);
             foreach (var hit in pixelPerfectHits)

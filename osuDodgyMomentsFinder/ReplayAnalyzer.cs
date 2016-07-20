@@ -39,24 +39,34 @@ namespace osuDodgyMomentsFinder
             //int currentTime = 0;
             int keyIndex = 0;
             bool pressReady = true;
+            Keys lastKey = Keys.None;
 
             for (int i = 0; i < beatmap.HitObjects.Count; ++i)
             {
                 CircleObject note = beatmap.HitObjects[i];
+                bool flag = false;
 
-                if ((note.Type & HitObjectType.Circle) > 0)
+                if (i == 297)
+                {
+                    int u = 0;
+                }
+
+
+                if ((note.Type & HitObjectType.Spinner) > 0)
                     continue;
 
                 for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
                 {
                     ReplayFrame frame = replay.ReplayFrames[j];
 
-                    if (frame.Keys == Keys.None)
+                    if (frame.Keys != lastKey)
                         pressReady = true;
 
                     if (frame.Keys != Keys.None && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && pressReady)
                     {
+                        flag = true;
                         pressReady = false;
+                        lastKey = frame.Keys;
                         hits.Add(new KeyValuePair<CircleObject, ReplayFrame>(note, frame));
                         keyIndex = j + 1;
                         break;
@@ -65,7 +75,16 @@ namespace osuDodgyMomentsFinder
                     if (frame.Keys != Keys.None)
                         pressReady = false;
 
+                    lastKey = frame.Keys;
+
                 }
+
+                if (!flag)
+                {
+                    Console.WriteLine("Panic! Didn't find the hit for " + i + " " + keyIndex);
+                }
+
+
             }
 
             /*if (note.Type == HitObjectType.Slider)
@@ -117,6 +136,13 @@ namespace osuDodgyMomentsFinder
 
             return result;
         }
+
+        /*public List<double> findSortedPixelPerfectHits(int maxSize)
+        {
+
+        }*/
+
+
 
         public double unstableRate()
         {
