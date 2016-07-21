@@ -8,27 +8,23 @@ namespace osuDodgyMomentsFinder
 {
     class Program
     {
-        static void Main(string[] args)
+
+        static void MainInfo(ReplayAnalyzer analyzer)
         {
-            Beatmap beatmap = new Beatmap(args[0]);
-            Replay replay = new Replay(args[1], true);
+            Console.WriteLine("Unstable rate = " + analyzer.unstableRate());
 
-            //Console.WriteLine(1);
+            Console.WriteLine("The best CS value = " + analyzer.bestCSValue());
 
-            ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
-
-            //Console.WriteLine(analyzer.hits.Count);
-            //Console.WriteLine(beatmap.HitObjects.Count);
-
-            Console.WriteLine(analyzer.findBestPixelHit());
+            Console.WriteLine("The best pixel perfect hit " + analyzer.findBestPixelHit());
 
             var pixelPerfectHits = analyzer.findSortedPixelPerfectHits(10);
 
-            Console.WriteLine(pixelPerfectHits.Count);
+            Console.WriteLine("Pixel perfect hits: " + pixelPerfectHits.Count);
             foreach (var hit in pixelPerfectHits)
             {
-                Console.WriteLine(hit.Key + " " + hit.Value);
+                Console.WriteLine(hit.Key + " at " + hit.Value + "ms");
             }
+
 
             //Console.WriteLine(analyzer.hits.Count);
 
@@ -43,9 +39,30 @@ namespace osuDodgyMomentsFinder
 
             //beatmap.Save("new.osu");
 
+        }
+
+
+        static void Main(string[] args)
+        {
+            Beatmap beatmap = new Beatmap(args[0]);
+            Replay replay = new Replay(args[1], true);
+
+            ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
+
+            MainInfo(analyzer);
+
+            var overAims = analyzer.findOverAimHits();
+            Console.WriteLine("Over:Aim hits " + overAims.Count);
+            foreach (var hit in overAims)
+            {
+                Console.WriteLine("at " + hit + "ms");
+            }
+
+
+
+            //MainInfo(analyzer);
 
             Console.ReadKey();
-
         }
         
     }

@@ -29,9 +29,12 @@ namespace osuDodgyMomentsFinder
         //hit time window
         private double hitTimeWindow;
 
+        //hit time window
+        private double approachTimeWindow;
 
         //The list of pair of a <hit, object hit>
         public List<KeyValuePair<CircleObject, ReplayFrame>> hits { get; private set; }
+        public List<CircleObject> miss { get; private set; }
 
 
         private void applyHardrock()
@@ -39,14 +42,17 @@ namespace osuDodgyMomentsFinder
             replay.AxisFlip = true;
             beatmap.CircleSize = beatmap.CircleSize * 1.3f;
             this.replay.ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
-            Console.WriteLine(beatmap.CircleSize);
+            //Console.WriteLine(beatmap.CircleSize);
         }
 
 
         private void associateHits()
         {
             hits = new List<KeyValuePair<CircleObject, ReplayFrame>>();
-            //int currentTime = 0;
+            miss = new List<CircleObject>();
+
+            int misses = 0;
+
             int keyIndex = 0;
             bool pressReady = true;
             Keys lastKey = Keys.None;
@@ -62,7 +68,7 @@ namespace osuDodgyMomentsFinder
                 CircleObject note = beatmap.HitObjects[i];
                 bool flag = false;
 
-                if (i == 209)
+                if (i == 206)
                 {
                     int u = 0;
                 }
@@ -96,20 +102,89 @@ namespace osuDodgyMomentsFinder
 
                 if (!flag)
                 {
-                    Console.WriteLine("Panic! Didn't find the hit for " + i + " " + keyIndex);
+                    ++misses;
+                    miss.Add(note);
                 }
 
-
             }
+        }
 
-            /*if (note.Type == HitObjectType.Slider)
+
+        public List<double> findOverAimHits()
+        {
+            List<double> result = new List<double>();
+            int keyIndex = 0;
+            for (int i = 0; i < beatmap.HitObjects.Count; ++i)
             {
-                SliderObject slider = (SliderObject)note;
+                CircleObject note = beatmap.HitObjects[i];
+                bool hover = false;
 
-                double startTime = note.StartTime;
-                double endTime = slider.SegmentEndTime;
-            }*/
-            //}
+                //searches for init circle object hover
+                for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
+                {
+                    ReplayFrame frame = replay.ReplayFrames[j];
+                    if (note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && Math.Abs(frame.Time - note.StartTime) <= approachTimeWindow)
+                    {
+                        hover = true;
+                        keyIndex = j + 1;
+                        break;
+                    }
+
+                }
+                if (hover)
+                {
+                    //searches for leaving of the object (dehover)
+                    for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
+                    {
+                        ReplayFrame frame = replay.ReplayFrames[j];
+                        if (!note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
+                        {
+                            keyIndex = j + 1;
+                            break;
+                        }
+                    }
+
+                    if (keyIndex >= replay.ReplayFrames.Count)
+                        return result;
+
+                    //Check whether the hit happened BEFORE the dehover
+                    int noteIndex = -1;
+                    for (int l = 0; l < this.hits.Count; ++l)
+                        if (hits[l].Key.Equals(note) && hits[l].Value.Time > replay.ReplayFrames[keyIndex].Time)
+                        {
+                            noteIndex = l;
+                            break;
+                        }
+                    
+                    if (noteIndex != -1)
+                        result.Add(note.StartTime);
+
+                }
+            }
+            return result;
+        }
+
+
+
+
+        //Recalculate the highest CS value for which the player would still have the same amount of misses
+        public double bestCSValue()
+        {
+            double pixelPerfect = findBestPixelHit();
+
+            double y = pixelPerfect * circleRadius;
+
+            double x = (54.42 - y) / 4.48;
+
+            return x;
+        }
+
+
+        public string outputMisses()
+        {
+            string res = "";
+            this.miss.ForEach((note) => res += "Didn't find the hit for " + note.StartTime);
+            return res;
         }
 
         private double calcTimeWindow(double OD)
@@ -124,6 +199,8 @@ namespace osuDodgyMomentsFinder
 
             this.circleRadius = beatmap.HitObjects[0].Radius;
             this.hitTimeWindow = calcTimeWindow(beatmap.OverallDifficulty);
+
+            this.approachTimeWindow = 1800 - 120 * beatmap.ApproachRate;
 
             associateHits();
         }
