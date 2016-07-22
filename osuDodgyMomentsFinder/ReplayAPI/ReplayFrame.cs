@@ -11,5 +11,6 @@ namespace ReplayAPI
         public float X { get; set; }
         public float Y { get; set; }
         public Keys Keys { get; set; }
+        public KeyCounter keyCounter { get; set; }
     }
 }

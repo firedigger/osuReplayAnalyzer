@@ -11,6 +11,37 @@ namespace osuDodgyMomentsFinder
 {
     static class Utils
     {
+
+        //Assumes sorted
+        public static double median(List<double> values)
+        {
+            if (values.Count % 2 == 0)
+                return (values[values.Count / 2 - 1] + values[values.Count / 2]) / 2;
+            else
+                return values[values.Count / 2];
+        }
+
+        public static T[] SubArray<T>(this T[] data, int index, int length)
+        {
+            T[] result = new T[length];
+            Array.Copy(data, index, result, 0, length);
+            return result;
+        }
+
+        public static T[] SubArray<T>(this T[] data, int index)
+        {
+            int length = data.Length - index;
+            T[] result = new T[length];
+            Array.Copy(data, index, result, 0, length);
+            return result;
+        }
+
+        public static int sign(int value)
+        {
+            return value > 0 ? 1 : 0;
+        }
+
+
         public static double sqr(double x)
         {
             return x * x;

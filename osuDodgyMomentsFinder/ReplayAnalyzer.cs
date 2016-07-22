@@ -34,7 +34,7 @@ namespace osuDodgyMomentsFinder
 
 
         //The list of pair of a <hit, object hit>
-        public List<KeyValuePair<CircleObject, ReplayFrame>> hits { get; private set; }
+        public List<HitFrame> hits { get; private set; }
         public List<CircleObject> miss { get; private set; }
 
 
@@ -47,10 +47,9 @@ namespace osuDodgyMomentsFinder
             this.replay.ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
         }
 
-
         private void associateHits()
         {
-            hits = new List<KeyValuePair<CircleObject, ReplayFrame>>();
+            hits = new List<HitFrame>();
             miss = new List<CircleObject>();
 
             int misses = 0;
@@ -58,6 +57,7 @@ namespace osuDodgyMomentsFinder
             int keyIndex = 0;
             bool pressReady = true;
             Keys lastKey = Keys.None;
+            KeyCounter keyCounter = new KeyCounter();
 
             if ((replay.Mods & Mods.HardRock) > 0)
             {
@@ -80,17 +80,21 @@ namespace osuDodgyMomentsFinder
 
                 for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
                 {
-                    ReplayFrame frame = replay.ReplayFrames[j];
+                    ReplayFrame frame = replay.ReplayFrames[j];                
 
                     if (((frame.Keys & lastKey) ^ frame.Keys) > 0)
                         pressReady = true;
+
+                    keyCounter.Update(lastKey, frame.Keys);
+
+                    frame.keyCounter = new KeyCounter(keyCounter);
 
                     if (frame.Keys != Keys.None && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && pressReady)
                     {
                         flag = true;
                         pressReady = false;
                         lastKey = frame.Keys;
-                        hits.Add(new KeyValuePair<CircleObject, ReplayFrame>(note, frame));
+                        hits.Add(new HitFrame(note, frame));
                         keyIndex = j + 1;
                         break;
                     }
@@ -112,9 +116,9 @@ namespace osuDodgyMomentsFinder
         }
 
 
-        public List<double> findOverAimHits()
+        public List<HitFrame> findOverAimHits()
         {
-            List<double> result = new List<double>();
+            var result = new List<HitFrame>();
             int keyIndex = 0;
             for (int i = 0; i < beatmap.HitObjects.Count; ++i)
             {
@@ -152,14 +156,14 @@ namespace osuDodgyMomentsFinder
                     //Check whether the hit happened BEFORE the dehover
                     int noteIndex = -1;
                     for (int l = 0; l < this.hits.Count; ++l)
-                        if (hits[l].Key.Equals(note) && hits[l].Value.Time > replay.ReplayFrames[keyIndex].Time)
+                        if (hits[l].note.Equals(note) && hits[l].frame.Time > replay.ReplayFrames[keyIndex].Time)
                         {
                             noteIndex = l;
                             break;
                         }
 
                     if (noteIndex != -1)
-                        result.Add(note.StartTime);
+                        result.Add(hits[noteIndex]);
 
                 }
             }
@@ -209,7 +213,7 @@ namespace osuDodgyMomentsFinder
 
         public double findBestPixelHit()
         {
-            return this.hits.Max((pair) => Utils.pixelPerfectHitFactor(pair.Value, pair.Key));
+            return this.hits.Max((pair) => Utils.pixelPerfectHitFactor(pair.frame, pair.note));
         }
 
         public List<double> findPixelPerfectHits(double threshold)
@@ -218,11 +222,11 @@ namespace osuDodgyMomentsFinder
 
             foreach (var pair in this.hits)
             {
-                double factor = Utils.pixelPerfectHitFactor(pair.Value, pair.Key);
+                double factor = Utils.pixelPerfectHitFactor(pair.frame, pair.note);
 
                 if (factor >= threshold)
                 {
-                    result.Add(pair.Key.StartTime);
+                    result.Add(pair.note.StartTime);
                 }
             }
 
@@ -231,19 +235,20 @@ namespace osuDodgyMomentsFinder
         }
 
 
-        public List<KeyValuePair<double, double>> findSortedPixelPerfectHits(int maxSize)
+        public List<KeyValuePair<double, HitFrame>> findSortedPixelPerfectHits(int maxSize, double threshold)
         {
-            List<KeyValuePair<double, double>> pixelPerfectHits = new List<KeyValuePair<double, double>>();
+            var pixelPerfectHits = new List<KeyValuePair<double, HitFrame>>();
 
             foreach (var pair in this.hits)
             {
-                double factor = Utils.pixelPerfectHitFactor(pair.Value, pair.Key);
-                pixelPerfectHits.Add(new KeyValuePair<double, double>(factor, pair.Key.StartTime));
+                double factor = Utils.pixelPerfectHitFactor(pair.frame, pair.note);
+                if(factor >= threshold)
+                    pixelPerfectHits.Add(new KeyValuePair<double, HitFrame>(factor, pair));
             }
 
             pixelPerfectHits.Sort((a, b) => b.Key.CompareTo(a.Key));
 
-            return pixelPerfectHits.GetRange(0, maxSize);
+            return pixelPerfectHits.GetRange(0, Math.Min(maxSize, pixelPerfectHits.Count));
         }
 
 
@@ -252,7 +257,7 @@ namespace osuDodgyMomentsFinder
         {
             if (ur >= 0)
                 return ur;
-            List<float> values = this.hits.ConvertAll((pair) => pair.Value.Time - pair.Key.StartTime);
+            List<float> values = this.hits.ConvertAll((pair) => pair.frame.Time - pair.note.StartTime);
             double avg = values.Average();
             ur = 10 * Math.Sqrt(values.Average(v => Math.Pow(v - avg, 2)));
             return ur;
@@ -264,6 +269,8 @@ namespace osuDodgyMomentsFinder
             Console.WriteLine("\nGENERIC INFO");
 
             Console.WriteLine("Unstable rate = " + unstableRate());
+            if (unstableRate() < 50)
+                Console.WriteLine("WARNING! Unstable rate is too low (auto)");
             Console.WriteLine("The best CS value = " + bestCSValue());
         }
 
@@ -271,11 +278,17 @@ namespace osuDodgyMomentsFinder
         {
             Console.WriteLine("\nPIXEL PERFECT");
 
-            var pixelPerfectHits = findSortedPixelPerfectHits(10);
-            Console.WriteLine("The best pixel perfect hit " + findBestPixelHit());
+            var pixelPerfectHits = findSortedPixelPerfectHits(10, 0.9);
+            double bestPxPerfect = findBestPixelHit();
+            Console.WriteLine("The best pixel perfect hit = " + bestPxPerfect);
+            if (bestPxPerfect < 0.6)
+                Console.WriteLine("WARNING! Player is clicking into the center of the note too consistently (auto)");
             Console.WriteLine("Pixel perfect hits: " + pixelPerfectHits.Count);
             foreach (var hit in pixelPerfectHits)
-                Console.WriteLine("* " + hit.Key + " at " + hit.Value + "ms");
+                Console.WriteLine("* " + hit.Key +  " " + hit.Value);
+            var LOLpixelPerfectHits = findSortedPixelPerfectHits(100, 0.99);
+            if (LOLpixelPerfectHits.Count > 40)
+                Console.WriteLine("WARNING! Player is constantly doing pixel perfect hits (relax)");
         }
         
         public void PrintOveraims()
@@ -285,7 +298,7 @@ namespace osuDodgyMomentsFinder
             var overAims = findOverAimHits();
             Console.WriteLine("Over-aim count: " + overAims.Count);
             foreach (var hit in overAims)
-                Console.WriteLine("* " + hit + "ms");
+                Console.WriteLine("* " + hit);
         }
     }
 }
