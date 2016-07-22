@@ -240,7 +240,7 @@ namespace osuDodgyMomentsFinder
             result.Sort((a, b) => b.Key.CompareTo(a.Key));
             
 
-            return result.GetRange(0,maxSize);
+            return result.GetRange(0, maxSize);
         }
 
 
