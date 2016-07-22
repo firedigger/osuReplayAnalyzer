@@ -2,9 +2,7 @@
 
 This is an osu! anticheat based on heuristic analysis. It analyzes a player's replay and points to specific moments that should be investigated further. For example, it might tell you the location of an over-aimed hit, which is often seen in relax hackers.
 
-<br>
-<img src="https://gfycat.com/AccurateHeartfeltBasenji" />
-</br>
+![](https://puu.sh/qaRdJ/5ec2d47a27.png)
 
 
 # How to use
