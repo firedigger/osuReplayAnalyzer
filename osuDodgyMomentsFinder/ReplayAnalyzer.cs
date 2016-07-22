@@ -244,28 +244,15 @@ namespace osuDodgyMomentsFinder
         }
 
 
-
+        private double ur = -1;
         public double unstableRate()
         {
-
+            if(ur >= 0)
+                return ur;
             List<float> values = this.hits.ConvertAll((pair) => pair.Value.Time - pair.Key.StartTime);
-
             double avg = values.Average();
-            return 10 * Math.Sqrt(values.Average(v => Math.Pow(v - avg, 2)));
-            /*double mean = 0;
-            double mean_sq = 0;
-
-            foreach (var pair in this.hits)
-            {
-                double diff = Math.Abs(pair.Value.Time - pair.Key.StartTime);
-                mean += diff;
-                mean_sq += Utils.sqr(diff);
-            }
-
-            Console.WriteLine(mean * mean);
-            Console.WriteLine(mean_sq);
-
-            return 10 * Math.Sqrt(mean_sq - Utils.sqr(mean));*/
+            ur = 10 * Math.Sqrt(values.Average(v => Math.Pow(v - avg, 2)));
+            return ur;
         }
 
     }
