@@ -11,18 +11,19 @@ namespace osuDodgyMomentsFinder
 
         static void MainInfo(ReplayAnalyzer analyzer)
         {
+            Console.WriteLine("\nGENERIC INFO");
             Console.WriteLine("Unstable rate = " + analyzer.unstableRate());
-
             Console.WriteLine("The best CS value = " + analyzer.bestCSValue());
 
-            Console.WriteLine("The best pixel perfect hit " + analyzer.findBestPixelHit());
+            Console.WriteLine("\nPIXEL PERFECT");
 
             var pixelPerfectHits = analyzer.findSortedPixelPerfectHits(10);
 
+            Console.WriteLine("The best pixel perfect hit " + analyzer.findBestPixelHit());
             Console.WriteLine("Pixel perfect hits: " + pixelPerfectHits.Count);
             foreach (var hit in pixelPerfectHits)
             {
-                Console.WriteLine(hit.Key + " at " + hit.Value + "ms");
+                Console.WriteLine("* " + hit.Key + " at " + hit.Value + "ms");
             }
 
 
@@ -50,12 +51,15 @@ namespace osuDodgyMomentsFinder
             Beatmap beatmap = new Beatmap(args[0]);
             Replay replay = new Replay(args[1], true);
 
+            Console.WriteLine("BEATMAP: " + args[0]);
+            Console.WriteLine("REPLAY: " + args[1]);
+
             ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
 
             MainInfo(analyzer);
 
             var overAims = analyzer.findOverAimHits();
-            Console.WriteLine("Over-aimed hits " + overAims.Count);
+            Console.WriteLine("\nOver-aimed hits " + overAims.Count);
             foreach (var hit in overAims)
             {
                 Console.WriteLine("at " + hit + "ms");
