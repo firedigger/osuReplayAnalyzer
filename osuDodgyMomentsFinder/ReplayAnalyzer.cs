@@ -231,19 +231,20 @@ namespace osuDodgyMomentsFinder
         }
 
 
-        public List<KeyValuePair<double, double>> findSortedPixelPerfectHits(int maxSize)
+        public List<KeyValuePair<double, double>> findSortedPixelPerfectHits(int maxSize, double threshold)
         {
             List<KeyValuePair<double, double>> pixelPerfectHits = new List<KeyValuePair<double, double>>();
 
             foreach (var pair in this.hits)
             {
                 double factor = Utils.pixelPerfectHitFactor(pair.Value, pair.Key);
-                pixelPerfectHits.Add(new KeyValuePair<double, double>(factor, pair.Key.StartTime));
+                if(factor >= threshold)
+                    pixelPerfectHits.Add(new KeyValuePair<double, double>(factor, pair.Key.StartTime));
             }
 
             pixelPerfectHits.Sort((a, b) => b.Key.CompareTo(a.Key));
 
-            return pixelPerfectHits.GetRange(0, maxSize);
+            return pixelPerfectHits.GetRange(0, Math.Min(maxSize, pixelPerfectHits.Count));
         }
 
 
@@ -271,7 +272,7 @@ namespace osuDodgyMomentsFinder
         {
             Console.WriteLine("\nPIXEL PERFECT");
 
-            var pixelPerfectHits = findSortedPixelPerfectHits(10);
+            var pixelPerfectHits = findSortedPixelPerfectHits(10, 0.9);
             Console.WriteLine("The best pixel perfect hit " + findBestPixelHit());
             Console.WriteLine("Pixel perfect hits: " + pixelPerfectHits.Count);
             foreach (var hit in pixelPerfectHits)
