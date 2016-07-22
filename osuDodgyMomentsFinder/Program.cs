@@ -44,6 +44,9 @@ namespace osuDodgyMomentsFinder
 
         static void Main(string[] args)
         {
+            if(args.Length == 0)
+                args = UIUtils.getArgsFromUser();
+
             Beatmap beatmap = new Beatmap(args[0]);
             Replay replay = new Replay(args[1], true);
 
@@ -57,10 +60,6 @@ namespace osuDodgyMomentsFinder
             {
                 Console.WriteLine("at " + hit + "ms");
             }
-
-
-
-            //MainInfo(analyzer);
 
             Console.ReadKey();
         }
