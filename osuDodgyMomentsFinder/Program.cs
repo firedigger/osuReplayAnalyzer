@@ -89,7 +89,14 @@ namespace osuDodgyMomentsFinder
 
         static void Main(string[] args)
         {
-            Console.WriteLine(args[0]);
+            if (args.Length == 0)
+            {
+                Console.WriteLine("Welcome the firedigger's replay analyzer. Use one of 3 options");
+                Console.WriteLine("-i for getting info about a certain replay");
+                Console.WriteLine("-c for comparing all the replays in the current folder against each other");
+                Console.WriteLine("-cr for comparing the replays from command line args");
+                Console.ReadKey();
+            }
             if (args[0] == "-i")
                 ReplayAnalyzing(args.SubArray(1));
             if (args[0] == "-c")
