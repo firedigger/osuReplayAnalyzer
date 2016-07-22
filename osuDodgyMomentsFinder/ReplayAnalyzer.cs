@@ -32,6 +32,7 @@ namespace osuDodgyMomentsFinder
         //hit time window
         private double approachTimeWindow;
 
+
         //The list of pair of a <hit, object hit>
         public List<KeyValuePair<CircleObject, ReplayFrame>> hits { get; private set; }
         public List<CircleObject> miss { get; private set; }
@@ -41,8 +42,9 @@ namespace osuDodgyMomentsFinder
         {
             replay.AxisFlip = true;
             beatmap.CircleSize = beatmap.CircleSize * 1.3f;
+            if (beatmap.CircleSize > 10)
+                beatmap.CircleSize = 10;
             this.replay.ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
-            //Console.WriteLine(beatmap.CircleSize);
         }
 
 
@@ -155,7 +157,7 @@ namespace osuDodgyMomentsFinder
                             noteIndex = l;
                             break;
                         }
-                    
+
                     if (noteIndex != -1)
                         result.Add(note.StartTime);
 
@@ -228,45 +230,63 @@ namespace osuDodgyMomentsFinder
             return result;
         }
 
-        public List<KeyValuePair<double, double>> findSortedPixelPerfectHits(int maxSize)
+
+        public List<KeyValuePair<double, double>> findSortedPixelPerfectHits(int maxSize, double threshold)
         {
-            List<KeyValuePair<double, double>> result = new List<KeyValuePair<double, double>>();
+            List<KeyValuePair<double, double>> pixelPerfectHits = new List<KeyValuePair<double, double>>();
 
             foreach (var pair in this.hits)
             {
                 double factor = Utils.pixelPerfectHitFactor(pair.Value, pair.Key);
-                result.Add(new KeyValuePair<double, double>(factor, pair.Key.StartTime));
+                if(factor >= threshold)
+                    pixelPerfectHits.Add(new KeyValuePair<double, double>(factor, pair.Key.StartTime));
             }
-            result.Sort((a, b) => b.Key.CompareTo(a.Key));
-            
 
-            return result.GetRange(0,maxSize);
+            pixelPerfectHits.Sort((a, b) => b.Key.CompareTo(a.Key));
+
+            return pixelPerfectHits.GetRange(0, Math.Min(maxSize, pixelPerfectHits.Count));
         }
 
 
-
+        private double ur = -1;
         public double unstableRate()
         {
-
+            if (ur >= 0)
+                return ur;
             List<float> values = this.hits.ConvertAll((pair) => pair.Value.Time - pair.Key.StartTime);
-
             double avg = values.Average();
-            return 10 * Math.Sqrt(values.Average(v => Math.Pow(v - avg, 2)));
-            /*double mean = 0;
-            double mean_sq = 0;
-
-            foreach (var pair in this.hits)
-            {
-                double diff = Math.Abs(pair.Value.Time - pair.Key.StartTime);
-                mean += diff;
-                mean_sq += Utils.sqr(diff);
-            }
-
-            Console.WriteLine(mean * mean);
-            Console.WriteLine(mean_sq);
-
-            return 10 * Math.Sqrt(mean_sq - Utils.sqr(mean));*/
+            ur = 10 * Math.Sqrt(values.Average(v => Math.Pow(v - avg, 2)));
+            return ur;
         }
 
+
+        public void PrintMainInfo()
+        {
+            Console.WriteLine("\nGENERIC INFO");
+
+            Console.WriteLine("Unstable rate = " + unstableRate());
+            Console.WriteLine("The best CS value = " + bestCSValue());
+        }
+
+        public void PrintPixelPerfect()
+        {
+            Console.WriteLine("\nPIXEL PERFECT");
+
+            var pixelPerfectHits = findSortedPixelPerfectHits(10, 0.9);
+            Console.WriteLine("The best pixel perfect hit " + findBestPixelHit());
+            Console.WriteLine("Pixel perfect hits: " + pixelPerfectHits.Count);
+            foreach (var hit in pixelPerfectHits)
+                Console.WriteLine("* " + hit.Key + " at " + hit.Value + "ms");
+        }
+        
+        public void PrintOveraims()
+        {
+            Console.WriteLine("\nOVER-AIM");
+
+            var overAims = findOverAimHits();
+            Console.WriteLine("Over-aim count: " + overAims.Count);
+            foreach (var hit in overAims)
+                Console.WriteLine("* " + hit + "ms");
+        }
     }
 }
