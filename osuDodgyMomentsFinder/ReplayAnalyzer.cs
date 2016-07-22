@@ -32,6 +32,7 @@ namespace osuDodgyMomentsFinder
         //hit time window
         private double approachTimeWindow;
 
+
         //The list of pair of a <hit, object hit>
         public List<KeyValuePair<CircleObject, ReplayFrame>> hits { get; private set; }
         public List<CircleObject> miss { get; private set; }
@@ -41,8 +42,9 @@ namespace osuDodgyMomentsFinder
         {
             replay.AxisFlip = true;
             beatmap.CircleSize = beatmap.CircleSize * 1.3f;
+            if (beatmap.CircleSize > 10)
+                beatmap.CircleSize = 10;
             this.replay.ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
-            //Console.WriteLine(beatmap.CircleSize);
         }
 
 
@@ -228,19 +230,20 @@ namespace osuDodgyMomentsFinder
             return result;
         }
 
+
         public List<KeyValuePair<double, double>> findSortedPixelPerfectHits(int maxSize)
         {
-            List<KeyValuePair<double, double>> result = new List<KeyValuePair<double, double>>();
+            List<KeyValuePair<double, double>> pixelPerfectHits = new List<KeyValuePair<double, double>>();
 
             foreach (var pair in this.hits)
             {
                 double factor = Utils.pixelPerfectHitFactor(pair.Value, pair.Key);
-                result.Add(new KeyValuePair<double, double>(factor, pair.Key.StartTime));
+                pixelPerfectHits.Add(new KeyValuePair<double, double>(factor, pair.Key.StartTime));
             }
-            result.Sort((a, b) => b.Key.CompareTo(a.Key));
-            
 
-            return result.GetRange(0, maxSize);
+            pixelPerfectHits.Sort((a, b) => b.Key.CompareTo(a.Key));
+            
+            return pixelPerfectHits.GetRange(0, maxSize);
         }
 
 
