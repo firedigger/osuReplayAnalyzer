@@ -157,7 +157,7 @@ namespace osuDodgyMomentsFinder
                             noteIndex = l;
                             break;
                         }
-                    
+
                     if (noteIndex != -1)
                         result.Add(note.StartTime);
 
@@ -242,7 +242,7 @@ namespace osuDodgyMomentsFinder
             }
 
             pixelPerfectHits.Sort((a, b) => b.Key.CompareTo(a.Key));
-            
+
             return pixelPerfectHits.GetRange(0, maxSize);
         }
 
@@ -250,7 +250,7 @@ namespace osuDodgyMomentsFinder
         private double ur = -1;
         public double unstableRate()
         {
-            if(ur >= 0)
+            if (ur >= 0)
                 return ur;
             List<float> values = this.hits.ConvertAll((pair) => pair.Value.Time - pair.Key.StartTime);
             double avg = values.Average();
@@ -258,5 +258,34 @@ namespace osuDodgyMomentsFinder
             return ur;
         }
 
+
+        public void PrintMainInfo()
+        {
+            Console.WriteLine("\nGENERIC INFO");
+
+            Console.WriteLine("Unstable rate = " + unstableRate());
+            Console.WriteLine("The best CS value = " + bestCSValue());
+        }
+
+        public void PrintPixelPerfect()
+        {
+            Console.WriteLine("\nPIXEL PERFECT");
+
+            var pixelPerfectHits = findSortedPixelPerfectHits(10);
+            Console.WriteLine("The best pixel perfect hit " + findBestPixelHit());
+            Console.WriteLine("Pixel perfect hits: " + pixelPerfectHits.Count);
+            foreach (var hit in pixelPerfectHits)
+                Console.WriteLine("* " + hit.Key + " at " + hit.Value + "ms");
+        }
+        
+        public void PrintOveraims()
+        {
+            Console.WriteLine("\nOVER-AIM");
+
+            var overAims = findOverAimHits();
+            Console.WriteLine("Over-aim count: " + overAims.Count);
+            foreach (var hit in overAims)
+                Console.WriteLine("* " + hit + "ms");
+        }
     }
 }
