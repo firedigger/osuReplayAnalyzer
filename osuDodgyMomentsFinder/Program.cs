@@ -96,6 +96,7 @@ namespace osuDodgyMomentsFinder
                 Console.WriteLine("-c for comparing all the replays in the current folder against each other");
                 Console.WriteLine("-cr for comparing the replays from command line args");
                 Console.ReadKey();
+                return;
             }
             if (args[0] == "-i")
                 ReplayAnalyzing(args.SubArray(1));
