@@ -56,6 +56,7 @@
     <Compile Include="BMAPI\v1\HitObjects\SliderObject.cs" />
     <Compile Include="BMAPI\v1\HitObjects\SpinnerObject.cs" />
     <Compile Include="BMAPI\v1\TimingPoint.cs" />
+    <Compile Include="HitFrame.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ReplayAnalyzer.cs" />
@@ -80,6 +81,8 @@
     <Compile Include="ReplayAPI\LZMACoder.cs" />
     <Compile Include="ReplayAPI\Replay.cs" />
     <Compile Include="ReplayAPI\ReplayFrame.cs" />
+    <Compile Include="ReplayComparator.cs" />
+    <Compile Include="ReplayEditor.cs" />
     <Compile Include="Utils.cs" />
   </ItemGroup>
   <ItemGroup>

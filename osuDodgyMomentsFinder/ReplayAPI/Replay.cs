@@ -54,6 +54,11 @@ namespace ReplayAPI
             }
         }
 
+        private Keys parseKeys(string v)
+        {
+            return (Keys)Enum.Parse(typeof(Keys),v);
+        }
+
         private void loadHeader()
         {
             GameMode = (GameModes)Enum.Parse(typeof(GameModes), replayReader.ReadByte().ToString(culture));
@@ -135,7 +140,7 @@ namespace ReplayAPI
                             Time = int.Parse(split[0], culture) + lastTime,
                             X = float.Parse(split[1], culture),
                             Y = float.Parse(split[2], culture),
-                            Keys = (Keys)Enum.Parse(typeof(Keys), split[3])
+                            Keys = parseKeys(split[3])
                         });
                         lastTime = ReplayFrames[ReplayFrames.Count - 1].Time;
                     }
