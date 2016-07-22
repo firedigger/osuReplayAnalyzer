@@ -52,7 +52,7 @@ namespace osuDodgyMomentsFinder
             MainInfo(analyzer);
 
             var overAims = analyzer.findOverAimHits();
-            Console.WriteLine("Over:Aim hits " + overAims.Count);
+            Console.WriteLine("Over-aimed hits " + overAims.Count);
             foreach (var hit in overAims)
             {
                 Console.WriteLine("at " + hit + "ms");
