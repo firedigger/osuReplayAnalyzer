@@ -69,12 +69,7 @@ namespace osuDodgyMomentsFinder
             {
                 CircleObject note = beatmap.HitObjects[i];
                 bool flag = false;
-
-                if (i == 206)
-                {
-                    int u = 0;
-                }
-
+                
                 if ((note.Type & HitObjectType.Spinner) > 0)
                     continue;
 
