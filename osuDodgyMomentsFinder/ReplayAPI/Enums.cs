@@ -25,12 +25,7 @@ namespace ReplayAPI
         public void Update(Keys last, Keys current)
         {
             int diff = current - last;
-
-            if (diff > 0)
-            {
-                int u = 0;
-            }
-
+            
             M1 += (!last.HasFlag(Keys.M1) && current.HasFlag(Keys.M1) && !current.HasFlag(Keys.K1)) ? 1 : 0;
             M2 += (!last.HasFlag(Keys.M2) && current.HasFlag(Keys.M2) && !current.HasFlag(Keys.K2)) ? 1 : 0;
             K1 += (!last.HasFlag(Keys.K1) && current.HasFlag(Keys.K1)) ? 1 : 0;
