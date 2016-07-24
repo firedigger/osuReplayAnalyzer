@@ -35,6 +35,7 @@ namespace osuDodgyMomentsFinder
             res += note.StartTime + "ms";
             res += " hit at " + frame.Time + "ms";
             res += "(" + frame.keyCounter + ")";
+            //res += "(" + frame.combo + "x)";
 
             return res;
 
