@@ -695,6 +695,10 @@ namespace BMAPI.v1
                 }
             }*/
         }
-        
+
+        public override string ToString()
+        {
+            return Filename;
+        }
     }
 }

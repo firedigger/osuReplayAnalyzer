@@ -56,6 +56,7 @@
     <Compile Include="BMAPI\v1\HitObjects\SliderObject.cs" />
     <Compile Include="BMAPI\v1\HitObjects\SpinnerObject.cs" />
     <Compile Include="BMAPI\v1\TimingPoint.cs" />
+    <Compile Include="CursorMovement.cs" />
     <Compile Include="HitFrame.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
