@@ -155,13 +155,36 @@ namespace osuDodgyMomentsFinder
             {
                 if (args.Length == 1)
                     args = UIUtils.getArgsFromUser();
-                ReplayAnalyzing(new Beatmap(args[0]), new Replay(args[1], true));
+                ReplayAnalyzing(new Beatmap(args[1]), new Replay(args[2], true));
             }
             if (args[0] == "-c")
                 ReplayComparison(args.SubArray(1));
             if (args[0] == "-cr")
                 CompareReplays(args.SubArray(1));
+            if (args[0] == "-s")
+            {
+                if (args.Length == 1)
+                    args = UIUtils.getArgsFromUser();
+                CursorSpeed(new Beatmap(args[1]), new Replay(args[2], true));
+            }
+
         }
-        
+
+        static void CursorSpeed(Beatmap beatmap, Replay replay)
+        {
+            string res = "";
+
+            Console.WriteLine("BEATMAP: " + beatmap.ToString() + "\n");
+            Console.WriteLine("REPLAY: " + replay.ToString() + "\n");
+
+            ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
+            //res += analyzer.MainInfo() + "\n";
+            //res += analyzer.PixelPerfectInfo() + "\n";
+            //res += analyzer.OveraimsInfo() + "\n";
+            res += analyzer.outputAcceleration() + "\r\n";
+            res += analyzer.outputTime() + "\r\n";
+
+            File.WriteAllText(replay.ToString() + ".accelerations", res);
+        }
     }
 }

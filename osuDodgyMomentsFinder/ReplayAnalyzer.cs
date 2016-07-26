@@ -39,6 +39,7 @@ namespace osuDodgyMomentsFinder
         public List<CircleObject> miss { get; private set; }
         public List<BreakEvent> breaks { get; private set; }
         public CursorMovement cursorData { get; private set; }
+        public List<ReplayFrame> times { get; private set; }
 
         private void applyHardrock()
         {
@@ -147,13 +148,35 @@ namespace osuDodgyMomentsFinder
         {
             double distance = 0;
 
-            replay.ReplayFrames[0].travelledDistance = distance;
-            for (int i = 0; i < replay.ReplayFrames.Count - 1; ++i)
+            this.times = replay.ReplayFrames.Where(x => x.TimeDiff > 0 && x.TimeDiff <= 40).ToList();
+
+            times[0].travelledDistance = distance;
+            for (int i = 0; i < times.Count - 1; ++i)
             {
-                ReplayFrame from = replay.ReplayFrames[i], to = replay.ReplayFrames[i + 1];
+                ReplayFrame from = times[i], to = times[i + 1];
                 distance += Utils.dist(from.X, from.Y, to.X, to.Y);
                 to.travelledDistance = distance;
             }
+
+            times[0].speed = 0;
+            for (int i = 1; i < times.Count - 1; ++i)
+            {
+                ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+
+                double V = (to.travelledDistance - from.travelledDistance) / (to.TimeDiff + current.TimeDiff);
+                current.speed = V;
+            }
+            times.Last().speed = 0;
+
+            times[0].acceleration = 0;
+            for (int i = 1; i < times.Count - 1; ++i)
+            {
+                ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+
+                double A = (to.speed - from.speed) / (to.TimeDiff + current.TimeDiff);
+                current.acceleration = A;
+            }
+            times.Last().acceleration = 0;
 
             /*int hitIndex = 0;
             for(int i = 0; i < this.beatmap.HitObjects.Count - 1; ++i)
@@ -167,7 +190,7 @@ namespace osuDodgyMomentsFinder
 
             }*/
 
-            this.cursorData = new CursorMovement();
+            /*this.cursorData = new CursorMovement();
             double h = this.replay.ReplayFrames.Where(x => x.TimeDiff > 0 && x.TimeDiff <= 40).Average(x => x.TimeDiff);
 
             double[] values = new double[(int)(replay.ReplayFrames.Last().TimeDiff / h)];
@@ -202,10 +225,43 @@ namespace osuDodgyMomentsFinder
 
             cursorData.h = h;
             cursorData.offset = offset;
-            cursorData.speed = values;
+            cursorData.speed = values;*/
         }
 
+        public List<double> speedList()
+        {
+            return this.times.ConvertAll(x => x.speed);
+        }
 
+        public string outputSpeed()
+        {
+            string res = "";
+            foreach(var value in speedList())
+            {
+                res += value + ",";
+            }
+            return res.Remove(res.Length - 1);
+        }
+
+        public string outputAcceleration()
+        {
+            string res = "";
+            foreach (var value in this.times.ConvertAll(x => x.acceleration))
+            {
+                res += value + ",";
+            }
+            return res.Remove(res.Length - 1);
+        }
+
+        public string outputTime()
+        {
+            string res = "";
+            foreach (var value in this.times.ConvertAll(x => x.Time))
+            {
+                res += value + ",";
+            }
+            return res.Remove(res.Length - 1);
+        }
 
 
         public List<HitFrame> findOverAimHits()
@@ -306,6 +362,7 @@ namespace osuDodgyMomentsFinder
 
             selectBreaks();
             associateHits();
+            calculateCursorSpeed();
         }
 
         public double findBestPixelHit()
