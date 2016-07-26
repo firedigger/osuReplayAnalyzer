@@ -9,7 +9,7 @@ namespace osuDodgyMomentsFinder
 {
     class Program
     {
-        static List<KeyValuePair<Beatmap, Replay>> AssociateMapsReplays()
+        static List<KeyValuePair<Beatmap, Replay>> AssociateMapsReplays(bool osuDB)
         {
             DirectoryInfo directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
             FileInfo[] files = directory.GetFiles();
@@ -28,32 +28,47 @@ namespace osuDodgyMomentsFinder
                 }
             }
             var replays = replaysFiles.ConvertAll((path) => new Replay(path, true));
+
+            var osuDBmaps = MainControlFrame.Instance.osuDbP.Beatmaps;
+
             var maps = mapsFiles.ConvertAll((path) => new Beatmap(path));
 
             var result = new List<KeyValuePair<Beatmap, Replay>>();
             var dict = new Dictionary<string, Beatmap>();
 
+            //Add all the beatmaps from the current folder
             foreach(var map in maps)
             {
                 dict.Add(map.BeatmapHash, map);
             }
 
-            foreach(var replay in replays)
+            //Add all the beatmaps from the osu DB
+            if (osuDB)
             {
-                if (dict.ContainsKey(replay.MapHash))
+                foreach (OsuDbAPI.Beatmap dbBeatmap in osuDBmaps)
                 {
-                    result.Add(new KeyValuePair<Beatmap, Replay>(dict[replay.MapHash], replay));
+                    string beatmapPath = MainControlFrame.Instance.pathSongs + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
+                    Beatmap map = new Beatmap(beatmapPath);
+                    if (!dict.ContainsKey(map.BeatmapHash))
+                        dict.Add(map.BeatmapHash, map);
                 }
-                else
+
+                foreach (var replay in replays)
                 {
-                    Console.WriteLine("WARNING! A corresponding map wasn't found for " + replay.ToString());
+
+                    if (dict.ContainsKey(replay.MapHash))
+                    {
+                        result.Add(new KeyValuePair<Beatmap, Replay>(dict[replay.MapHash], replay));
+                    }
+                    else
+                    {
+                        Console.WriteLine("WARNING! A corresponding map wasn't found for " + replay.ToString());
+                    }
                 }
             }
 
             return result;
         }
-
-
 
 
         static string ReplayAnalyzing(Beatmap beatmap, Replay replay)
@@ -120,7 +135,7 @@ namespace osuDodgyMomentsFinder
 
         static void ReplayAnalyzingAll(bool oneFile = true)
         {
-            var pairs = AssociateMapsReplays();
+            var pairs = AssociateMapsReplays(true);
 
             string res = "";
             foreach (var pair in pairs)
@@ -136,8 +151,64 @@ namespace osuDodgyMomentsFinder
 
         }
 
+        static string ReplayAnalyzing(Replay replay)
+        {
+            var maps = MainControlFrame.Instance.osuDbP.Beatmaps;
+
+            string beatmapPath = "";
+            foreach (OsuDbAPI.Beatmap dbBeatmap in maps)
+            {
+                if (dbBeatmap.Hash == replay.MapHash)
+                {
+                    beatmapPath = MainControlFrame.Instance.pathSongs + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
+                    break;
+                }
+            }
+
+            Beatmap beatmap = new Beatmap(beatmapPath);
+
+            string res = "";
+
+            res += ("BEATMAP: " + beatmap.ToString() + "\n");
+            res += ("REPLAY: " + replay.ToString() + "\n");
+
+            ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
+            res += analyzer.MainInfo() + "\n";
+            res += analyzer.PixelPerfectInfo() + "\n";
+            res += analyzer.OveraimsInfo() + "\n";
+
+            return res;
+        }
+
+
         static void Main(string[] args)
         {
+            if (File.Exists(MainControlFrame.Instance.pathSettings))
+            {
+                MainControlFrame.Instance.LoadSettings();
+            }
+            else
+            {
+                string[] settings = new string[]
+                {
+                    @"# Lines starting with a # are ignored",
+                    @"# Do not change the order of the settings",
+                    @"",
+                    @"# Path to osu!.db",
+                    @"C:\\osu!\\osu!.db",
+                    @"",
+                    @"# Path to your osu! song folder",
+                    @"C:\\osu!\\songs\\",
+                    @"",
+                    @"# Path to a replay folder",
+                    @"C:\\osu!\\replays\\"
+                };
+                File.WriteAllLines(MainControlFrame.Instance.pathSettings, settings);
+                Console.WriteLine("A settings file has been created for you to link to your songs folder.");
+                return;
+            }
+
+
             if (args.Length == 0)
             {
                 Console.WriteLine("Welcome the firedigger's replay analyzer. Use one of 3 options");
@@ -153,15 +224,35 @@ namespace osuDodgyMomentsFinder
             }
             if (args[0] == "-i")
             {
-                if (args.Length == 1)
-                    args = UIUtils.getArgsFromUser();
-                ReplayAnalyzing(new Beatmap(args[0]), new Replay(args[1], true));
+                //if (args.Length == 1)
+                //    args = UIUtils.getArgsFromUser();
+                Console.WriteLine(ReplayAnalyzing(new Replay(args[1], true)));
             }
             if (args[0] == "-c")
                 ReplayComparison(args.SubArray(1));
             if (args[0] == "-cr")
                 CompareReplays(args.SubArray(1));
+            if (args[0] == "-s")
+            {
+                if (args.Length == 1)
+                    args = UIUtils.getArgsFromUser();
+                CursorSpeed(new Beatmap(args[1]), new Replay(args[2], true));
+            }
+
         }
-        
+
+        static void CursorSpeed(Beatmap beatmap, Replay replay)
+        {
+            string res = "";
+
+            Console.WriteLine("BEATMAP: " + beatmap.ToString() + "\n");
+            Console.WriteLine("REPLAY: " + replay.ToString() + "\n");
+
+            ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
+            res += analyzer.outputAcceleration() + "\r\n";
+            res += analyzer.outputTime() + "\r\n";
+
+            File.WriteAllText(replay.ToString() + ".accelerations", res);
+        }
     }
 }

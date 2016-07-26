@@ -1,4 +1,5 @@
 ﻿using System;
+using osuDodgyMomentsFinder;
 
 namespace BMAPI
 {
@@ -26,6 +27,9 @@ namespace BMAPI
                 return (float)Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2));                
             }
         }
+
+
+
         public void Normalize()
         {
             float length = Length; //Cache for minor performance improvement
@@ -72,6 +76,12 @@ namespace BMAPI
         {
             return new Point2(Left.X * Right.X, Left.Y * Right.Y);
         }
+
+        internal Vector2 ToVector2()
+        {
+            return new Vector2(this.X, this.Y);
+        }
+
         public static Point2 operator /(float Left, Point2 Right)
         {
             return new Point2(Left / Right.X, Left / Right.Y);

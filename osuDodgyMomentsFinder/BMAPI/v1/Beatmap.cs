@@ -290,6 +290,15 @@ namespace BMAPI.v1
                         for (int i = 0; i < reSplit.Length; i++)
                             values[i] = (float)Convert.ToDouble(reSplit[i]);
                         tempTimingPoint.InheritsBPM = !Convert.ToBoolean(Convert.ToInt32(values[6]));
+                        tempTimingPoint.beatLength = values[1];
+                        if (values[1] > 0)
+                        {
+                            tempTimingPoint.bpm = Math.Round(60000 / tempTimingPoint.beatLength);
+                        }
+                        else if (values[1] < 0)
+                        {
+                            tempTimingPoint.velocity = Math.Abs(100 / tempTimingPoint.beatLength);
+                        }
                         tempTimingPoint.Time = (float)Convert.ToDouble(values[0]);
                         tempTimingPoint.BpmDelay = (float)Convert.ToDouble(values[1]);
                         tempTimingPoint.TimeSignature = Convert.ToInt32(values[2]);
@@ -298,6 +307,15 @@ namespace BMAPI.v1
                         tempTimingPoint.VolumePercentage = Convert.ToInt32(values[5]);
                         tempTimingPoint.VisualOptions = (TimingPointOptions)Convert.ToInt32(values[7]);
                         Info.TimingPoints.Add(tempTimingPoint);
+                        this.TimingPoints.Add(tempTimingPoint);
+                    }
+                    for (int i = 1, l = TimingPoints.Count; i < l; i++)
+                    {
+                        if (TimingPoints[i].bpm == 0)
+                        {
+                            TimingPoints[i].beatLength = TimingPoints[i - 1].beatLength;
+                            TimingPoints[i].bpm = TimingPoints[i - 1].bpm;
+                        }
                     }
 
                     //Do work for [Colours] section
@@ -382,6 +400,13 @@ namespace BMAPI.v1
                                                             (float)Convert.ToDouble(pts[i].Substring(pts[i].IndexOf(":", StringComparison.InvariantCulture) + 1)));
                                 ((SliderObject)newObject).Points.Add(p);
                             }
+                            /*
+                             * var pxPerBeat      = beatmap.SliderMultiplier * 100 * timing.velocity;
+        var beatsNumber    = (hitObject.pixelLength * hitObject.repeatCount) / pxPerBeat;
+        hitObject.duration = Math.ceil(beatsNumber * timing.beatLength);
+        hitObject.endTime  = hitObject.startTime + hitObject.duration;
+                             */
+
                             ((SliderObject)newObject).RepeatCount = Convert.ToInt32(reSplit[6]);
                             ((SliderObject)newObject).PixelLength = Convert.ToSingle(reSplit[7]);
                             float tempMaxPoints;
@@ -389,6 +414,14 @@ namespace BMAPI.v1
                             {
                                 ((SliderObject)newObject).MaxPoints = tempMaxPoints;
                             }
+                            ((SliderObject)newObject).CreateCurves();
+
+                            var timing = TimingPointByTime(newObject.StartTime);
+                            var pxPerBeat = Info.SliderMultiplier * 100 * timing.velocity;
+                            var beatsNumber = ((SliderObject)newObject).PixelLength * ((SliderObject)newObject).RepeatCount / pxPerBeat;
+                            var duration = (int)Math.Ceiling(beatsNumber * timing.beatLength);
+                            ((SliderObject)newObject).duration = duration;
+
                         }
                         if ((newObject.Type & HitObjectType.Spinner) > 0)
                         {
@@ -415,15 +448,11 @@ namespace BMAPI.v1
 
         public TimingPoint TimingPointByTime(float time)
         {
-            TimingPoint nearest = null;
-            foreach (TimingPoint point in this.Info.TimingPoints)
+            for (var i = this.TimingPoints.Count - 1; i >= 0; i--)
             {
-                if (nearest == null || (time >= point.Time && time - nearest.Time > time - point.Time))
-                {
-                    nearest = point;
-                }
+                if (this.TimingPoints[i].Time <= time) { return this.TimingPoints[i]; }
             }
-            return nearest;
+            return this.TimingPoints[0];
         }
 
         /// <summary>

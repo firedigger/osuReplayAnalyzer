@@ -71,6 +71,12 @@ namespace osuDodgyMomentsFinder
         {
             return dist(frame.X, frame.Y, obj.Location.X, obj.Location.Y) / obj.Radius;
         }
+
+        public static double variance(List<double> values)
+        {
+            double avg = values.Average();
+            return Math.Sqrt(values.Average(v => Math.Pow(v - avg, 2)));
+        }
     }
 
     static class UIUtils

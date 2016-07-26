@@ -23,7 +23,6 @@ namespace osuDodgyMomentsFinder
         //The replay
         private Replay replay;
 
-
         //Circle radius
         private double circleRadius;
 
@@ -39,6 +38,7 @@ namespace osuDodgyMomentsFinder
         public List<CircleObject> miss { get; private set; }
         public List<BreakEvent> breaks { get; private set; }
         public CursorMovement cursorData { get; private set; }
+        public List<ReplayFrame> times { get; private set; }
 
         private void applyHardrock()
         {
@@ -134,6 +134,120 @@ namespace osuDodgyMomentsFinder
             }
         }
 
+        private List<double> calcSliderHoldTime()
+        {
+            List<double> result = new List<double>();
+
+            foreach(var hit in this.hits)
+            {
+                if (hit.note.Type == HitObjectType.Slider && ((SliderObject)hit.note).RepeatCount == 1)
+                {
+                    int i = this.replay.ReplayFrames.FindIndex(x => x == hit.frame);
+
+                    if (i >= 4250)
+                    {
+                        int u = 0;
+                    }
+
+                    Keys key = getKey(this.replay.ReplayFrames[i - 1].Keys, this.replay.ReplayFrames[i].Keys);
+
+                    if (key == Keys.None)
+                        throw new Exception();
+                    
+                    while(replay.ReplayFrames[i].Keys.HasFlag(key))
+                    {
+                        ++i;
+                    }
+
+                    SliderObject hitObjectAsSlider = (SliderObject)hit.note;
+                    double objectLength = (hitObjectAsSlider.TotalLength / hitObjectAsSlider.Velocity) * hitObjectAsSlider.RepeatCount;
+                    //double objectLength = ((hitObjectAsSlider.SegmentEndTime - hitObjectAsSlider.StartTime) * hitObjectAsSlider.RepeatCount);
+                    double delta = replay.ReplayFrames[i].Time - hitObjectAsSlider.StartTime - objectLength;
+
+                    if (delta > 100)
+                    {
+                        int u = 0;
+                    }
+
+                    if (!double.IsNaN(delta))
+                    {
+                        result.Add(delta);
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public double calcSliderHoldTimeVariance()
+        {
+            var list = calcSliderHoldTime();
+            return Utils.variance(list);
+        }
+
+        private Keys getKey(Keys last, Keys current)
+        {
+            if (!last.HasFlag(Keys.M1) && current.HasFlag(Keys.M1) && !current.HasFlag(Keys.K1)) return Keys.M1;
+            if (!last.HasFlag(Keys.M2) && current.HasFlag(Keys.M2) && !current.HasFlag(Keys.K2)) return Keys.M2;
+            if (!last.HasFlag(Keys.K1) && current.HasFlag(Keys.K1)) return Keys.K1;
+            if (!last.HasFlag(Keys.K2) && current.HasFlag(Keys.K2)) return Keys.K2;
+            return Keys.None;
+        }
+
+        private List<double> calcPressIntervals()
+        {
+            List<double> result = new List<double>();
+
+            bool k1 = false, k2 = false;
+            double k1_timer = 0, k2_timer = 0;
+            foreach (var frame in this.replay.ReplayFrames)
+            {
+                var hit = this.hits.Find(x => x.frame.Equals(frame));
+                
+                if (hit != null && hit.note.Type == HitObjectType.Circle)
+                {
+                    if (!k1 && frame.Keys.HasFlag(Keys.K1))
+                        k1 = true;
+
+                    if (!k2 && frame.Keys.HasFlag(Keys.K2))
+                        k2 = true;
+                }
+
+                //k1
+                if (k1 && frame.Keys.HasFlag(Keys.K1))
+                {
+                    k1_timer += frame.TimeDiff;
+                }
+
+                if (k1 && !frame.Keys.HasFlag(Keys.K1))
+                {
+                    k1 = false;
+                    result.Add(k1_timer);
+                    k1_timer = 0;
+                }
+
+                //k2
+                if (k2 && frame.Keys.HasFlag(Keys.K2))
+                {
+                    k2_timer += frame.TimeDiff;
+                }
+
+                if (k2 && !frame.Keys.HasFlag(Keys.K2))
+                {
+                    k2 = false;
+                    result.Add(k2_timer);
+                    k2_timer = 0;
+                }
+            }
+
+            return result;
+        }
+
+        public double averagePressIntervals()
+        {
+            return calcPressIntervals().Average();
+        }
+
 
         public bool isCheating()
         {
@@ -142,18 +256,45 @@ namespace osuDodgyMomentsFinder
             return false;
         }
 
+        public double calculateAverageFrameTimeDiff()
+        {
+            return this.times.ConvertAll(x => x.TimeDiff).Average();
+        }
+
         
         private void calculateCursorSpeed()
         {
             double distance = 0;
 
-            replay.ReplayFrames[0].travelledDistance = distance;
-            for (int i = 0; i < replay.ReplayFrames.Count - 1; ++i)
+            this.times = replay.ReplayFrames.Where(x => x.TimeDiff > 0 && x.TimeDiff <= 40).ToList();
+
+            times[0].travelledDistance = distance;
+            for (int i = 0; i < times.Count - 1; ++i)
             {
-                ReplayFrame from = replay.ReplayFrames[i], to = replay.ReplayFrames[i + 1];
+                ReplayFrame from = times[i], to = times[i + 1];
                 distance += Utils.dist(from.X, from.Y, to.X, to.Y);
                 to.travelledDistance = distance;
             }
+
+            times[0].speed = 0;
+            for (int i = 1; i < times.Count - 1; ++i)
+            {
+                ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+
+                double V = (to.travelledDistance - from.travelledDistance) / (to.TimeDiff + current.TimeDiff);
+                current.speed = V;
+            }
+            times.Last().speed = 0;
+
+            times[0].acceleration = 0;
+            for (int i = 1; i < times.Count - 1; ++i)
+            {
+                ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+
+                double A = (to.speed - from.speed) / (to.TimeDiff + current.TimeDiff);
+                current.acceleration = A;
+            }
+            times.Last().acceleration = 0;
 
             /*int hitIndex = 0;
             for(int i = 0; i < this.beatmap.HitObjects.Count - 1; ++i)
@@ -167,7 +308,7 @@ namespace osuDodgyMomentsFinder
 
             }*/
 
-            this.cursorData = new CursorMovement();
+            /*this.cursorData = new CursorMovement();
             double h = this.replay.ReplayFrames.Where(x => x.TimeDiff > 0 && x.TimeDiff <= 40).Average(x => x.TimeDiff);
 
             double[] values = new double[(int)(replay.ReplayFrames.Last().TimeDiff / h)];
@@ -202,10 +343,48 @@ namespace osuDodgyMomentsFinder
 
             cursorData.h = h;
             cursorData.offset = offset;
-            cursorData.speed = values;
+            cursorData.speed = values;*/
         }
 
+        public List<double> speedList()
+        {
+            return this.times.ConvertAll(x => x.speed);
+        }
 
+        public List<double> accelerationList()
+        {
+            return this.times.ConvertAll(x => x.acceleration);
+        }
+
+        public string outputSpeed()
+        {
+            string res = "";
+            foreach(var value in speedList())
+            {
+                res += value + ",";
+            }
+            return res.Remove(res.Length - 1);
+        }
+
+        public string outputAcceleration()
+        {
+            string res = "";
+            foreach (var value in this.times.ConvertAll(x => x.acceleration))
+            {
+                res += value + ",";
+            }
+            return res.Remove(res.Length - 1);
+        }
+
+        public string outputTime()
+        {
+            string res = "";
+            foreach (var value in this.times.ConvertAll(x => x.Time))
+            {
+                res += value + ",";
+            }
+            return res.Remove(res.Length - 1);
+        }
 
 
         public List<HitFrame> findOverAimHits()
@@ -261,9 +440,7 @@ namespace osuDodgyMomentsFinder
             }
             return result;
         }
-
-
-
+        
 
         //Recalculate the highest CS value for which the player would still have the same amount of misses
         public double bestCSValue()
@@ -277,6 +454,10 @@ namespace osuDodgyMomentsFinder
             return x;
         }
 
+        public double calcAccelerationVariance()
+        {
+            return Utils.variance(accelerationList());
+        }
 
         public string outputMisses()
         {
@@ -306,6 +487,7 @@ namespace osuDodgyMomentsFinder
 
             selectBreaks();
             associateHits();
+            calculateCursorSpeed();
         }
 
         public double findBestPixelHit()
@@ -354,9 +536,8 @@ namespace osuDodgyMomentsFinder
         {
             if (ur >= 0)
                 return ur;
-            List<float> values = this.hits.ConvertAll((pair) => pair.frame.Time - pair.note.StartTime);
-            double avg = values.Average();
-            ur = 10 * Math.Sqrt(values.Average(v => Math.Pow(v - avg, 2)));
+            List<double> values = this.hits.ConvertAll((pair) => (double)pair.frame.Time - pair.note.StartTime);
+            ur = 10 * Utils.variance(values);
             return ur;
         }
 
@@ -370,6 +551,22 @@ namespace osuDodgyMomentsFinder
             if (unstableRate() < 50)
                 res += "WARNING! Unstable rate is too low (auto)\n";
             res += "The best CS value = " + bestCSValue() + "\n";
+
+            res += "Cursor acceleration variance = " + calcAccelerationVariance() + "\n";
+
+            double averageFrameTimeDiff = calculateAverageFrameTimeDiff();
+            res += "Average frame time difference = " + averageFrameTimeDiff + "ms\n";
+            if (replay.Mods.HasFlag(Mods.DoubleTime) && averageFrameTimeDiff < 17)
+            {
+                res += "WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods(timewarp)";
+            }
+            if (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiff < 12)
+            {
+                res += "WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods(timewarp)";
+            }
+
+            res += "Average Key press time interval = " + averagePressIntervals() + "ms\n";
+            //res += "Slider hold time variance = " + calcSliderHoldTimeVariance() + "ms\n";
             return res;
         }
 
@@ -378,7 +575,7 @@ namespace osuDodgyMomentsFinder
             string res = "";
             res += "PIXEL PERFECT\n";
 
-            var pixelPerfectHits = findSortedPixelPerfectHits(1000, 0.9);
+            var pixelPerfectHits = findSortedPixelPerfectHits(1000, 0.98);
             double bestPxPerfect = findBestPixelHit();
             res += "The best pixel perfect hit = " + bestPxPerfect + "\n";
             if (bestPxPerfect < 0.6)

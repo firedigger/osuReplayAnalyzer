@@ -1,0 +1,2 @@
+My API to navigate osu!.db
+It is incomplete as it does not include all the beatmap details that are stored (like star difficulties). All this program really needs from osu!.db is the beatmap hashes and .osu file location, so this is good enough. 

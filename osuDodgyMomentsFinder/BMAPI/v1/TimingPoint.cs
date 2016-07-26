@@ -1,4 +1,6 @@
 ﻿
+using System;
+
 namespace BMAPI.v1
 {
     public class TimingPoint
@@ -31,6 +33,9 @@ namespace BMAPI.v1
         public int TimeSignature = 4;
         public int SampleSet = 0;
         public int CustomSampleSet = 0;
+        public double velocity = 1;
+        public double beatLength;
+        public double bpm;
         public int VolumePercentage = 100;
         public bool InheritsBPM = false;
         public TimingPointOptions VisualOptions;
