@@ -7,15 +7,17 @@ This is an osu! anticheat based on heuristic analysis. It analyzes a player's re
 
 # How to use
 
-There are two methods of using the program.
+In all instances, you start by navigating command prompt towards the .exe, typing the executable name followed up by arguments. Arguments will be used to tell the program what you want it to do.
 
-### 1st method
-Place the beatmap (.osu) file and the replay (.osr) both in the same folder as the osuReplayAnalyzer program.
-Run the program and select the corresponding beatmap/replay. The names of the files must match the osu! standard.
+Example usage: > osuDodgyMomentsFinder.exe -ia
 
-### 2nd method
-Run the program using specific command line arguments. The first argument will be the path to the beatmap, and the second the path to the given replay.
+###Argument formats: 
+**single replay** Argument "-i", the program will ask you to pick a replay/beatmap combo from the same folder as the executable.
 
+**analyze all replays in folder** Argument "-ia". A FullAnalysis.osi file will be created. Open it with notepad or another editor.
 
-### Result
-You will receive a list of all suspicious moments the program has found. The information currently given by the program is their location in the beatmap, more precisely, which time they appear at. You can use the osu! beatmap editor or an external replay viewer to find that specific moment.
+**compare replays** Arguments "-cr <replay1> <replay2> <..:>".
+
+**compare all replays in folder** Argument "-c".
+
+**calculate cursor speed info** Argument "-s". Program will ask you to pick a replay.
