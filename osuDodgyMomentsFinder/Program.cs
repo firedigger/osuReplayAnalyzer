@@ -9,35 +9,66 @@ namespace osuDodgyMomentsFinder
 {
     class Program
     {
-        static string createNoHDPath(string path)
+        static List<KeyValuePair<Beatmap, Replay>> AssociateMapsReplays()
         {
-            return path.Replace(".osr", ".noHD.osr");
+            DirectoryInfo directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
+            FileInfo[] files = directory.GetFiles();
+
+            var replaysFiles = new List<string>();
+            var mapsFiles = new List<string>();
+            foreach (FileInfo file in files)
+            {
+                if (file.Extension == ".osr")
+                {
+                    replaysFiles.Add(file.Name);
+                }
+                if (file.Extension == ".osu")
+                {
+                    mapsFiles.Add(file.Name);
+                }
+            }
+            var replays = replaysFiles.ConvertAll((path) => new Replay(path, true));
+            var maps = mapsFiles.ConvertAll((path) => new Beatmap(path));
+
+            var result = new List<KeyValuePair<Beatmap, Replay>>();
+            var dict = new Dictionary<string, Beatmap>();
+
+            foreach(var map in maps)
+            {
+                dict.Add(map.BeatmapHash, map);
+            }
+
+            foreach(var replay in replays)
+            {
+                if (dict.ContainsKey(replay.MapHash))
+                {
+                    result.Add(new KeyValuePair<Beatmap, Replay>(dict[replay.MapHash], replay));
+                }
+                else
+                {
+                    Console.WriteLine("WARNING! A corresponding map wasn't found for " + replay.ToString());
+                }
+            }
+
+            return result;
         }
 
 
-        static void ReplayAnalyzing(string[] args)
+
+
+        static string ReplayAnalyzing(Beatmap beatmap, Replay replay)
         {
-            if (args.Length == 0)
-                args = UIUtils.getArgsFromUser();
+            string res = "";
 
-            Beatmap beatmap = new Beatmap(args[0]);
-            Replay replay = new Replay(args[1], true);
-
-            if (replay.Mods.HasFlag(Mods.Hidden))
-            {
-                replay.Mods = replay.Mods ^ Mods.Hidden;
-                replay.Save(createNoHDPath(args[1]));
-            }
-
-            Console.WriteLine("BEATMAP: " + args[0]);
-            Console.WriteLine("REPLAY: " + args[1]);
+            res += ("BEATMAP: " + beatmap.ToString() + "\n");
+            res += ("REPLAY: " + replay.ToString() + "\n");
 
             ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
-            analyzer.PrintMainInfo();
-            analyzer.PrintPixelPerfect();
-            analyzer.PrintOveraims();
+            res += analyzer.MainInfo() + "\n";
+            res += analyzer.PixelPerfectInfo() + "\n";
+            res += analyzer.OveraimsInfo() + "\n";
 
-            Console.ReadKey();
+            return res;
         }
 
 
@@ -87,6 +118,24 @@ namespace osuDodgyMomentsFinder
             Console.ReadKey();
         }
 
+        static void ReplayAnalyzingAll(bool oneFile = true)
+        {
+            var pairs = AssociateMapsReplays();
+
+            string res = "";
+            foreach (var pair in pairs)
+            {
+                string result = ReplayAnalyzing(pair.Key, pair.Value);
+                if (oneFile)
+                    res += result;
+                else
+                    File.WriteAllText(pair.Value.ToString() + ".osi", result);
+            }
+            if (oneFile)
+                File.WriteAllText("FullAnalysis.osi", res);
+
+        }
+
         static void Main(string[] args)
         {
             if (args.Length == 0)
@@ -98,13 +147,44 @@ namespace osuDodgyMomentsFinder
                 Console.ReadKey();
                 return;
             }
+            if (args[0] == "-ia")
+            {
+                ReplayAnalyzingAll(true);
+            }
             if (args[0] == "-i")
-                ReplayAnalyzing(args.SubArray(1));
+            {
+                if (args.Length == 1)
+                    args = UIUtils.getArgsFromUser();
+                ReplayAnalyzing(new Beatmap(args[1]), new Replay(args[2], true));
+            }
             if (args[0] == "-c")
                 ReplayComparison(args.SubArray(1));
             if (args[0] == "-cr")
                 CompareReplays(args.SubArray(1));
+            if (args[0] == "-s")
+            {
+                if (args.Length == 1)
+                    args = UIUtils.getArgsFromUser();
+                CursorSpeed(new Beatmap(args[1]), new Replay(args[2], true));
+            }
+
         }
-        
+
+        static void CursorSpeed(Beatmap beatmap, Replay replay)
+        {
+            string res = "";
+
+            Console.WriteLine("BEATMAP: " + beatmap.ToString() + "\n");
+            Console.WriteLine("REPLAY: " + replay.ToString() + "\n");
+
+            ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
+            //res += analyzer.MainInfo() + "\n";
+            //res += analyzer.PixelPerfectInfo() + "\n";
+            //res += analyzer.OveraimsInfo() + "\n";
+            res += analyzer.outputAcceleration() + "\r\n";
+            res += analyzer.outputTime() + "\r\n";
+
+            File.WriteAllText(replay.ToString() + ".accelerations", res);
+        }
     }
 }

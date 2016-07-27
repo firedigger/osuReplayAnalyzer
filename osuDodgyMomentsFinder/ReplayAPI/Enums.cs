@@ -17,20 +17,17 @@ namespace ReplayAPI
         public KeyCounter(KeyCounter other)
         {
             M1 = other.M1;
-            M2 = other.M1;
+            M2 = other.M2;
             K1 = other.K1;
             K2 = other.K2;
         }
 
         public void Update(Keys last, Keys current)
         {
-            int diff = current - last;
-            
             M1 += (!last.HasFlag(Keys.M1) && current.HasFlag(Keys.M1) && !current.HasFlag(Keys.K1)) ? 1 : 0;
             M2 += (!last.HasFlag(Keys.M2) && current.HasFlag(Keys.M2) && !current.HasFlag(Keys.K2)) ? 1 : 0;
             K1 += (!last.HasFlag(Keys.K1) && current.HasFlag(Keys.K1)) ? 1 : 0;
             K2 += (!last.HasFlag(Keys.K2) && current.HasFlag(Keys.K2)) ? 1 : 0;
-
         }
 
         public override string ToString()

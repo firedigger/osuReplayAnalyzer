@@ -219,5 +219,11 @@ namespace ReplayAPI
             ReplayFrames.Clear();
             LifeFrames.Clear();
         }
+
+        public override string ToString()
+        {
+            return Filename;
+        }
+
     }
 }

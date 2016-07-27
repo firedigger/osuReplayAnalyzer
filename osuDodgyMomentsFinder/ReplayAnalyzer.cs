@@ -1,4 +1,5 @@
 ﻿using BMAPI.v1;
+using BMAPI.v1.Events;
 using BMAPI.v1.HitObjects;
 using ReplayAPI;
 using System;
@@ -36,7 +37,9 @@ namespace osuDodgyMomentsFinder
         //The list of pair of a <hit, object hit>
         public List<HitFrame> hits { get; private set; }
         public List<CircleObject> miss { get; private set; }
-
+        public List<BreakEvent> breaks { get; private set; }
+        public CursorMovement cursorData { get; private set; }
+        public List<ReplayFrame> times { get; private set; }
 
         private void applyHardrock()
         {
@@ -47,11 +50,19 @@ namespace osuDodgyMomentsFinder
             this.replay.ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
         }
 
+        private void selectBreaks()
+        {
+            foreach(var event1 in this.beatmap.Events)
+            {
+                if (event1.GetType() == typeof(BreakEvent))
+                {
+                    this.breaks.Add((BreakEvent)event1);
+                }
+            }
+        }
+
         private void associateHits()
         {
-            hits = new List<HitFrame>();
-            miss = new List<CircleObject>();
-
             int misses = 0;
 
             int keyIndex = 0;
@@ -64,6 +75,8 @@ namespace osuDodgyMomentsFinder
                 applyHardrock();
             }
 
+            int breakIndex = 0;
+            int combo = 0;
 
             for (int i = 0; i < beatmap.HitObjects.Count; ++i)
             {
@@ -75,17 +88,27 @@ namespace osuDodgyMomentsFinder
 
                 for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
                 {
-                    ReplayFrame frame = replay.ReplayFrames[j];                
+                    ReplayFrame frame = replay.ReplayFrames[j];
 
                     if (((frame.Keys & lastKey) ^ frame.Keys) > 0)
                         pressReady = true;
 
-                    keyCounter.Update(lastKey, frame.Keys);
+                    if (breakIndex < breaks.Count && frame.Time > breaks[breakIndex].EndTime)
+                    {
+                        ++breakIndex;
+                    }
+
+                    if (frame.Time >= beatmap.HitObjects[0].StartTime - hitTimeWindow && (breakIndex >= breaks.Count || frame.Time < this.breaks[breakIndex].StartTime - hitTimeWindow))
+                    {
+                        keyCounter.Update(lastKey, frame.Keys);
+                    }
 
                     frame.keyCounter = new KeyCounter(keyCounter);
 
                     if (frame.Keys != Keys.None && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && pressReady)
                     {
+                        ++combo;
+                        frame.combo = combo;
                         flag = true;
                         pressReady = false;
                         lastKey = frame.Keys;
@@ -99,6 +122,8 @@ namespace osuDodgyMomentsFinder
 
                     lastKey = frame.Keys;
 
+                    frame.combo = combo;
+
                 }
 
                 if (!flag)
@@ -108,6 +133,134 @@ namespace osuDodgyMomentsFinder
                 }
 
             }
+        }
+
+
+        public bool isCheating()
+        {
+            if (this.replay.PlayerName == "Axarious" || this.replay.PlayerName == "Bikko")
+                return true;
+            return false;
+        }
+
+        
+        private void calculateCursorSpeed()
+        {
+            double distance = 0;
+
+            this.times = replay.ReplayFrames.Where(x => x.TimeDiff > 0 && x.TimeDiff <= 40).ToList();
+
+            times[0].travelledDistance = distance;
+            for (int i = 0; i < times.Count - 1; ++i)
+            {
+                ReplayFrame from = times[i], to = times[i + 1];
+                distance += Utils.dist(from.X, from.Y, to.X, to.Y);
+                to.travelledDistance = distance;
+            }
+
+            times[0].speed = 0;
+            for (int i = 1; i < times.Count - 1; ++i)
+            {
+                ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+
+                double V = (to.travelledDistance - from.travelledDistance) / (to.TimeDiff + current.TimeDiff);
+                current.speed = V;
+            }
+            times.Last().speed = 0;
+
+            times[0].acceleration = 0;
+            for (int i = 1; i < times.Count - 1; ++i)
+            {
+                ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+
+                double A = (to.speed - from.speed) / (to.TimeDiff + current.TimeDiff);
+                current.acceleration = A;
+            }
+            times.Last().acceleration = 0;
+
+            /*int hitIndex = 0;
+            for(int i = 0; i < this.beatmap.HitObjects.Count - 1; ++i)
+            {
+                CircleObject note = this.beatmap.HitObjects[i];
+
+                while (this.replay.ReplayFrames[hitIndex].Time < note.StartTime)
+                    ++hitIndex;
+
+                List<>
+
+            }*/
+
+            /*this.cursorData = new CursorMovement();
+            double h = this.replay.ReplayFrames.Where(x => x.TimeDiff > 0 && x.TimeDiff <= 40).Average(x => x.TimeDiff);
+
+            double[] values = new double[(int)(replay.ReplayFrames.Last().TimeDiff / h)];
+            values[0] = this.replay.ReplayFrames[0].travelledDistance;
+            for(int i = 1; i < values.Length; ++i)
+            {
+                int frameBefore = i;
+                int frameAfter = i;
+                while (replay.ReplayFrames[frameBefore].Time > i * h)
+                    --frameBefore;
+                while (replay.ReplayFrames[frameBefore].Time < (i + 1) * h)
+                    ++frameAfter;
+
+                values[i] = (replay.ReplayFrames[frameAfter].travelledDistance - replay.ReplayFrames[frameBefore].travelledDistance) / (replay.ReplayFrames[frameAfter].Time - replay.ReplayFrames[frameBefore].Time) * (i*h - replay.ReplayFrames[frameBefore].Time);
+            }
+
+            double offset = 2 * h;
+            double[] speedValues = new double[values.Length - 4];
+            for(int i = 2; i < values.Length - 2; ++i)
+            {
+                double S1 = values[i - 1] - values[i - 2]; 
+                double S2 = values[i] - values[i - 1];
+                double S3 = values[i + 1] - values[i];
+                double S4 = values[i + 2] - values[i + 1];
+
+                double V2 = Utils.derivative(S1, S2, S3, h);
+                double V3 = Utils.derivative(S2, S3, S4, h);
+
+                double V = (V3 + V2) / 2;
+                speedValues[i - 2] = V;
+            }
+
+            cursorData.h = h;
+            cursorData.offset = offset;
+            cursorData.speed = values;*/
+        }
+
+        public List<double> speedList()
+        {
+            return this.times.ConvertAll(x => x.speed);
+        }
+
+        public string outputSpeed()
+        {
+            string res = "";
+            foreach(var value in speedList())
+            {
+                res += value + ",";
+            }
+            return res.Remove(res.Length - 1);
+        }
+
+        public string outputAcceleration()
+        {
+            string res = "";
+            foreach (var value in this.times.ConvertAll(x => x.acceleration))
+            {
+                res += value + ",";
+            }
+            return res.Remove(res.Length - 1);
+        }
+
+        public string outputTime()
+        {
+            string res = "";
+            foreach (var value in this.times.ConvertAll(x => x.Time))
+            {
+                res += value + ",";
+            }
+            return res.Remove(res.Length - 1);
         }
 
 
@@ -203,7 +356,13 @@ namespace osuDodgyMomentsFinder
 
             this.approachTimeWindow = 1800 - 120 * beatmap.ApproachRate;
 
+            hits = new List<HitFrame>();
+            miss = new List<CircleObject>();
+            breaks = new List<BreakEvent>();
+
+            selectBreaks();
             associateHits();
+            calculateCursorSpeed();
         }
 
         public double findBestPixelHit()
@@ -259,41 +418,49 @@ namespace osuDodgyMomentsFinder
         }
 
 
-        public void PrintMainInfo()
+        public string MainInfo()
         {
-            Console.WriteLine("\nGENERIC INFO");
+            string res = "";
+            res += "GENERIC INFO\n";
 
-            Console.WriteLine("Unstable rate = " + unstableRate());
+            res += "Unstable rate = " + unstableRate() + "\n";
             if (unstableRate() < 50)
-                Console.WriteLine("WARNING! Unstable rate is too low (auto)");
-            Console.WriteLine("The best CS value = " + bestCSValue());
+                res += "WARNING! Unstable rate is too low (auto)\n";
+            res += "The best CS value = " + bestCSValue() + "\n";
+            return res;
         }
 
-        public void PrintPixelPerfect()
+        public string PixelPerfectInfo()
         {
-            Console.WriteLine("\nPIXEL PERFECT");
+            string res = "";
+            res += "PIXEL PERFECT\n";
 
-            var pixelPerfectHits = findSortedPixelPerfectHits(10, 0.9);
+            var pixelPerfectHits = findSortedPixelPerfectHits(1000, 0.9);
             double bestPxPerfect = findBestPixelHit();
-            Console.WriteLine("The best pixel perfect hit = " + bestPxPerfect);
+            res += "The best pixel perfect hit = " + bestPxPerfect + "\n";
             if (bestPxPerfect < 0.6)
-                Console.WriteLine("WARNING! Player is clicking into the center of the note too consistently (auto)");
-            Console.WriteLine("Pixel perfect hits: " + pixelPerfectHits.Count);
+                res += "WARNING! Player is clicking into the center of the note too consistently (auto)\n";
+            res += "Pixel perfect hits: " + pixelPerfectHits.Count + "\n";
             foreach (var hit in pixelPerfectHits)
-                Console.WriteLine("* " + hit.Key +  " " + hit.Value);
+                res += "* " + hit.Key +  " " + hit.Value + "\n";
             var LOLpixelPerfectHits = findSortedPixelPerfectHits(100, 0.99);
             if (LOLpixelPerfectHits.Count > 40)
-                Console.WriteLine("WARNING! Player is constantly doing pixel perfect hits (relax)");
+                res += "WARNING! Player is constantly doing pixel perfect hits (relax)\n";
+
+            return res;
         }
         
-        public void PrintOveraims()
+        public string OveraimsInfo()
         {
-            Console.WriteLine("\nOVER-AIM");
+            string res = "";
+            res += "OVER-AIM\n";
 
             var overAims = findOverAimHits();
-            Console.WriteLine("Over-aim count: " + overAims.Count);
+            res += "Over-aim count: " + overAims.Count + "\n";
             foreach (var hit in overAims)
-                Console.WriteLine("* " + hit);
+                res += "* " + hit + "\n";
+
+            return res;
         }
     }
 }

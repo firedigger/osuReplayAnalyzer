@@ -11,6 +11,11 @@ namespace osuDodgyMomentsFinder
 {
     static class Utils
     {
+        public static double derivative(double a, double b, double c, double h)
+        {
+            return (-a + 2 * b - c) / h / h;
+        }
+
 
         //Assumes sorted
         public static double median(List<double> values)
@@ -45,6 +50,11 @@ namespace osuDodgyMomentsFinder
         public static double sqr(double x)
         {
             return x * x;
+        }
+
+        public static double dist(ReplayFrame frame1, ReplayFrame frame2)
+        {
+            return dist(frame1.X, frame1.Y, frame2.X, frame2.Y);
         }
 
         public static double dist(float x1, float y1, float x2, float y2)
