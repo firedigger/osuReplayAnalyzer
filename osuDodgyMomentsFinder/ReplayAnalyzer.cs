@@ -268,82 +268,37 @@ namespace osuDodgyMomentsFinder
 
             this.times = replay.ReplayFrames.Where(x => x.TimeDiff > 0 && x.TimeDiff <= 40).ToList();
 
-            times[0].travelledDistance = distance;
-            for (int i = 0; i < times.Count - 1; ++i)
+            if (times != null && times.Count > 0)
             {
-                ReplayFrame from = times[i], to = times[i + 1];
-                distance += Utils.dist(from.X, from.Y, to.X, to.Y);
-                to.travelledDistance = distance;
+
+                times[0].travelledDistance = distance;
+                for (int i = 0; i < times.Count - 1; ++i)
+                {
+                    ReplayFrame from = times[i], to = times[i + 1];
+                    distance += Utils.dist(from.X, from.Y, to.X, to.Y);
+                    to.travelledDistance = distance;
+                }
+
+                times[0].speed = 0;
+                for (int i = 1; i < times.Count - 1; ++i)
+                {
+                    ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+
+                    double V = (to.travelledDistance - from.travelledDistance) / (to.TimeDiff + current.TimeDiff);
+                    current.speed = V;
+                }
+                times.Last().speed = 0;
+
+                times[0].acceleration = 0;
+                for (int i = 1; i < times.Count - 1; ++i)
+                {
+                    ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+
+                    double A = (to.speed - from.speed) / (to.TimeDiff + current.TimeDiff);
+                    current.acceleration = A;
+                }
+                times.Last().acceleration = 0;
             }
-
-            times[0].speed = 0;
-            for (int i = 1; i < times.Count - 1; ++i)
-            {
-                ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
-
-                double V = (to.travelledDistance - from.travelledDistance) / (to.TimeDiff + current.TimeDiff);
-                current.speed = V;
-            }
-            times.Last().speed = 0;
-
-            times[0].acceleration = 0;
-            for (int i = 1; i < times.Count - 1; ++i)
-            {
-                ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
-
-                double A = (to.speed - from.speed) / (to.TimeDiff + current.TimeDiff);
-                current.acceleration = A;
-            }
-            times.Last().acceleration = 0;
-
-            /*int hitIndex = 0;
-            for(int i = 0; i < this.beatmap.HitObjects.Count - 1; ++i)
-            {
-                CircleObject note = this.beatmap.HitObjects[i];
-
-                while (this.replay.ReplayFrames[hitIndex].Time < note.StartTime)
-                    ++hitIndex;
-
-                List<>
-
-            }*/
-
-            /*this.cursorData = new CursorMovement();
-            double h = this.replay.ReplayFrames.Where(x => x.TimeDiff > 0 && x.TimeDiff <= 40).Average(x => x.TimeDiff);
-
-            double[] values = new double[(int)(replay.ReplayFrames.Last().TimeDiff / h)];
-            values[0] = this.replay.ReplayFrames[0].travelledDistance;
-            for(int i = 1; i < values.Length; ++i)
-            {
-                int frameBefore = i;
-                int frameAfter = i;
-                while (replay.ReplayFrames[frameBefore].Time > i * h)
-                    --frameBefore;
-                while (replay.ReplayFrames[frameBefore].Time < (i + 1) * h)
-                    ++frameAfter;
-
-                values[i] = (replay.ReplayFrames[frameAfter].travelledDistance - replay.ReplayFrames[frameBefore].travelledDistance) / (replay.ReplayFrames[frameAfter].Time - replay.ReplayFrames[frameBefore].Time) * (i*h - replay.ReplayFrames[frameBefore].Time);
-            }
-
-            double offset = 2 * h;
-            double[] speedValues = new double[values.Length - 4];
-            for(int i = 2; i < values.Length - 2; ++i)
-            {
-                double S1 = values[i - 1] - values[i - 2]; 
-                double S2 = values[i] - values[i - 1];
-                double S3 = values[i + 1] - values[i];
-                double S4 = values[i + 2] - values[i + 1];
-
-                double V2 = Utils.derivative(S1, S2, S3, h);
-                double V3 = Utils.derivative(S2, S3, S4, h);
-
-                double V = (V3 + V2) / 2;
-                speedValues[i - 2] = V;
-            }
-
-            cursorData.h = h;
-            cursorData.offset = offset;
-            cursorData.speed = values;*/
         }
 
         public List<double> speedList()
@@ -558,15 +513,15 @@ namespace osuDodgyMomentsFinder
             res += "Average frame time difference = " + averageFrameTimeDiff + "ms\n";
             if (replay.Mods.HasFlag(Mods.DoubleTime) && averageFrameTimeDiff < 17)
             {
-                res += "WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods(timewarp)";
+                res += "WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods(timewarp)\n";
             }
             if (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiff < 12)
             {
-                res += "WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods(timewarp)";
+                res += "WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods(timewarp)\n";
             }
 
             res += "Average Key press time interval = " + averagePressIntervals() + "ms\n";
-            //res += "Slider hold time variance = " + calcSliderHoldTimeVariance() + "ms\n";
+            res += "Slider hold time variance = " + calcSliderHoldTimeVariance() + "ms\n";
             return res;
         }
 
@@ -578,8 +533,8 @@ namespace osuDodgyMomentsFinder
             var pixelPerfectHits = findSortedPixelPerfectHits(1000, 0.98);
             double bestPxPerfect = findBestPixelHit();
             res += "The best pixel perfect hit = " + bestPxPerfect + "\n";
-            if (bestPxPerfect < 0.6)
-                res += "WARNING! Player is clicking into the center of the note too consistently (auto)\n";
+            if (bestPxPerfect < 0.5)
+                res += "WARNING! Player is clicking into the center of the note too consistently (autohack or 2 star map)\n";
             res += "Pixel perfect hits: " + pixelPerfectHits.Count + "\n";
             foreach (var hit in pixelPerfectHits)
                 res += "* " + hit.Key +  " " + hit.Value + "\n";

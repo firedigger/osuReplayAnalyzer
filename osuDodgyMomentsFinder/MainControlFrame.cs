@@ -18,8 +18,11 @@ namespace osuDodgyMomentsFinder
         public string pathOsuDB { get; set; }
         public string pathSettings = "settings.txt";
 
-        private MainControlFrame()
+        public MainControlFrame()
         {
+            pathSongs = "";
+            pathReplays = "";
+            pathOsuDB = "";
         }
 
         public static MainControlFrame Instance
@@ -44,6 +47,20 @@ namespace osuDodgyMomentsFinder
             pathOsuDB = settings.GetProperty("pathOsuDB");
             Console.WriteLine(pathOsuDB);
             osuDbP = new OsuDbAPI.OsuDbFile(pathOsuDB);
+            stream.Close();
+        }
+
+        public void saveSettings()
+        {
+            FileStream stream = new FileStream(pathSettings, FileMode.Create);
+            JavaProperties settings = new JavaProperties();
+            settings.SetProperty("pathSongs", pathSongs);
+            settings.SetProperty("pathReplays", pathReplays);
+            settings.SetProperty("pathOsuDB", pathOsuDB);
+            JavaPropertyWriter writer = new JavaPropertyWriter(settings);
+            writer.Write(stream, "osuReplayAnalyzer settings");
+            stream.Close();
+            //File.WriteAllText(pathSettings,settings.ToString());
         }
     }
 }

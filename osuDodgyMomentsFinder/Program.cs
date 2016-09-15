@@ -7,9 +7,24 @@ using System.Collections.Generic;
 
 namespace osuDodgyMomentsFinder
 {
-    class Program
+    public class Program
     {
-        static List<KeyValuePair<Beatmap, Replay>> AssociateMapsReplays(bool osuDB)
+
+        public static Dictionary<string, Beatmap> processOsuDB(OsuDbAPI.OsuDbFile osuDB, string songsFolder)
+        {
+            Dictionary<string, Beatmap> dict = new Dictionary<string, Beatmap>();
+            foreach (OsuDbAPI.Beatmap dbBeatmap in osuDB.Beatmaps)
+            {
+                string beatmapPath = songsFolder + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
+                Beatmap map = new Beatmap(beatmapPath);
+                dict.Add(map.BeatmapHash, map);
+            }
+
+            return dict;
+        }
+
+
+        public static List<KeyValuePair<Beatmap, Replay>> AssociateMapsReplays(bool osuDB)
         {
             DirectoryInfo directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
             FileInfo[] files = directory.GetFiles();
@@ -71,7 +86,7 @@ namespace osuDodgyMomentsFinder
         }
 
 
-        static string ReplayAnalyzing(Beatmap beatmap, Replay replay)
+        public static string ReplayAnalyzing(Beatmap beatmap, Replay replay)
         {
             string res = "";
 
@@ -87,7 +102,7 @@ namespace osuDodgyMomentsFinder
         }
 
 
-        static void ReplayComparison(string[] args)
+        public static void ReplayComparison(string[] args)
         {
             DirectoryInfo directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
             FileInfo[] files = directory.GetFiles();
@@ -107,7 +122,7 @@ namespace osuDodgyMomentsFinder
             Console.ReadKey();
         }
 
-        static void CompareReplays(List<string> replaysFiles, double threshold)
+        public static void CompareReplays(List<string> replaysFiles, double threshold)
         {
             var replays = replaysFiles.ConvertAll((path) => new Replay(path, true));
 
@@ -124,7 +139,7 @@ namespace osuDodgyMomentsFinder
             }
         }
 
-        static void CompareReplays(string[] args)
+        public static void CompareReplays(string[] args)
         {
             var list = new List<string>();
             for (int i = 0; i < args.Length; ++i)
@@ -133,7 +148,7 @@ namespace osuDodgyMomentsFinder
             Console.ReadKey();
         }
 
-        static void ReplayAnalyzingAll(bool oneFile = true)
+        public static void ReplayAnalyzingAll(bool oneFile = true)
         {
             var pairs = AssociateMapsReplays(true);
 
@@ -151,7 +166,7 @@ namespace osuDodgyMomentsFinder
 
         }
 
-        static string ReplayAnalyzing(Replay replay)
+        public static string ReplayAnalyzing(Replay replay)
         {
             var maps = MainControlFrame.Instance.osuDbP.Beatmaps;
 
@@ -181,7 +196,7 @@ namespace osuDodgyMomentsFinder
         }
 
 
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             if (File.Exists(MainControlFrame.Instance.pathSettings))
             {
@@ -241,7 +256,7 @@ namespace osuDodgyMomentsFinder
 
         }
 
-        static void CursorSpeed(Beatmap beatmap, Replay replay)
+        public static void CursorSpeed(Beatmap beatmap, Replay replay)
         {
             string res = "";
 
