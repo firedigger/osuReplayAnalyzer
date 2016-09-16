@@ -1,0 +1,8 @@
+language: csharp
+solution: osuDodgyMomentsFinder.sln
+mono:
+    - latest
+install:
+    - nuget restore osuDodgyMomentsFinder.sln
+script:
+    - xbuild osuDodgyMomentsFinder.sln
