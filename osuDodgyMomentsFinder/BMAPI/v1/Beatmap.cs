@@ -75,7 +75,7 @@ namespace BMAPI.v1
             set
             {
                 p_CircleSize = value;
-                foreach (CircleObject hO in HitObjects)
+                foreach(CircleObject hO in HitObjects)
                 {
                     hO.Radius = (float)(54.42 - 4.48 * value);
                 }
@@ -123,9 +123,9 @@ namespace BMAPI.v1
             BM_Sections.Add("Title,TitleUnicode,Artist,ArtistUnicode,Creator,Version,Source,BeatmapID,BeatmapSetID", "Metadata");
             BM_Sections.Add("HPDrainRate,CircleSize,OverallDifficulty,ApproachRate,SliderMultiplier,SliderTickRate", "Difficulty");
 
-            if (beatmapFile != "")
+            if(beatmapFile != "")
             {
-                if (File.Exists(beatmapFile))
+                if(File.Exists(beatmapFile))
                 {
                     Parse(beatmapFile);
                 }
@@ -140,16 +140,16 @@ namespace BMAPI.v1
             Info.Folder = ffii.DirectoryName;
             Info.Filename = bm;
             Info.BeatmapHash = MD5FromFile(bm);
-            using (StreamReader sR = new StreamReader(bm))
+            using(StreamReader sR = new StreamReader(bm))
             {
                 string currentSection = "";
 
-                while (sR.Peek() != -1)
+                while(sR.Peek() != -1)
                 {
                     string line = sR.ReadLine();
 
                     //Check for section tag
-                    if (line.StartsWith("["))
+                    if(line.StartsWith("["))
                     {
                         currentSection = line;
                         continue;
@@ -157,51 +157,51 @@ namespace BMAPI.v1
 
                     //Check for commented-out line
                     //or blank lines
-                    if (line.StartsWith("//") || line.Length == 0)
+                    if(line.StartsWith("//") || line.Length == 0)
                         continue;
 
                     //Check for version string
-                    if (line.StartsWith("osu file format"))
+                    if(line.StartsWith("osu file format"))
                         Info.Format = Convert.ToInt32(line.Substring(17).Replace(Environment.NewLine, "").Replace(" ", ""));
 
                     //Do work for [General], [Metadata], [Difficulty] and [Editor] sections
-                    if ((currentSection == "[General]") || (currentSection == "[Metadata]") || (currentSection == "[Difficulty]") || (currentSection == "[Editor]"))
+                    if((currentSection == "[General]") || (currentSection == "[Metadata]") || (currentSection == "[Difficulty]") || (currentSection == "[Editor]"))
                     {
                         string[] reSplit = line.Split(':');
                         string cProperty = reSplit[0].TrimEnd();
 
                         bool isValidProperty = false;
-                        foreach (string k in BM_Sections.Keys)
+                        foreach(string k in BM_Sections.Keys)
                         {
-                            if (k.Contains(cProperty))
+                            if(k.Contains(cProperty))
                                 isValidProperty = true;
                         }
-                        if (!isValidProperty)
+                        if(!isValidProperty)
                             continue;
 
                         //Check for blank value
                         string cValue = reSplit[1].Trim();
 
                         //Import properties into Info
-                        switch (cProperty)
+                        switch(cProperty)
                         {
                             case "EditorBookmarks":
                                 {
                                     string[] marks = cValue.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                                    foreach (string m in marks.Where(m => m != ""))
+                                    foreach(string m in marks.Where(m => m != ""))
                                         Info.EditorBookmarks.Add(Convert.ToInt32(m));
                                 }
                                 break;
                             case "Bookmarks":
                                 {
                                     string[] marks = cValue.Split(new[] { "," }, StringSplitOptions.RemoveEmptyEntries);
-                                    foreach (string m in marks.Where(m => m != ""))
+                                    foreach(string m in marks.Where(m => m != ""))
                                         Info.Bookmarks.Add(Convert.ToInt32(m));
                                 }
                                 break;
                             case "Tags":
                                 string[] tags = cValue.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                                foreach (string t in tags)
+                                foreach(string t in tags)
                                     Info.Tags.Add(t);
                                 break;
                             case "Mode":
@@ -216,25 +216,25 @@ namespace BMAPI.v1
                             default:
                                 FieldInfo fi = Info.GetType().GetField(cProperty);
                                 PropertyInfo pi = Info.GetType().GetProperty(cProperty);
-                                if (fi != null)
+                                if(fi != null)
                                 {
-                                    if (fi.FieldType == typeof(float?))
+                                    if(fi.FieldType == typeof(float?))
                                         fi.SetValue(Info, (float?)Convert.ToDouble(cValue));
-                                    if (fi.FieldType == typeof(float))
+                                    if(fi.FieldType == typeof(float))
                                         fi.SetValue(Info, (float)Convert.ToDouble(cValue));
-                                    else if ((fi.FieldType == typeof(int?)) || (fi.FieldType == typeof(int)))
+                                    else if((fi.FieldType == typeof(int?)) || (fi.FieldType == typeof(int)))
                                         fi.SetValue(Info, Convert.ToInt32(cValue));
-                                    else if (fi.FieldType == typeof(string))
+                                    else if(fi.FieldType == typeof(string))
                                         fi.SetValue(Info, cValue);
                                     break;
                                 }
-                                if (pi.PropertyType == typeof(float?))
+                                if(pi.PropertyType == typeof(float?))
                                     pi.SetValue(Info, (float?)Convert.ToDouble(cValue), null);
-                                if (pi.PropertyType == typeof(float))
+                                if(pi.PropertyType == typeof(float))
                                     pi.SetValue(Info, (float)Convert.ToDouble(cValue), null);
-                                else if ((pi.PropertyType == typeof(int?)) || (pi.PropertyType == typeof(int)))
+                                else if((pi.PropertyType == typeof(int?)) || (pi.PropertyType == typeof(int)))
                                     pi.SetValue(Info, Convert.ToInt32(cValue), null);
-                                else if (pi.PropertyType == typeof(string))
+                                else if(pi.PropertyType == typeof(string))
                                     pi.SetValue(Info, cValue, null);
                                 break;
                         }
@@ -243,13 +243,13 @@ namespace BMAPI.v1
 
                     //The following are version-dependent, the version is stored as a numeric value inside Info.Format
                     //Do work for [Events] section
-                    if (currentSection == "[Events]")
+                    if(currentSection == "[Events]")
                     {
                         string[] reSplit = line.Split(',');
-                        switch (reSplit[0].ToLower())
+                        switch(reSplit[0].ToLower())
                         {
-                            case "0": 
-                            case "1": 
+                            case "0":
+                            case "1":
                             case "video":
                                 Info.Events.Add(new ContentEvent
                                 {
@@ -281,21 +281,21 @@ namespace BMAPI.v1
                     }
 
                     //Do work for [TimingPoints] section
-                    if (currentSection == "[TimingPoints]")
+                    if(currentSection == "[TimingPoints]")
                     {
                         TimingPoint tempTimingPoint = new TimingPoint();
 
                         float[] values = { 0, 0, 4, 0, 0, 100, 0, 0, 0 };
                         string[] reSplit = line.Split(',');
-                        for (int i = 0; i < reSplit.Length; i++)
+                        for(int i = 0; i < reSplit.Length; i++)
                             values[i] = (float)Convert.ToDouble(reSplit[i]);
                         tempTimingPoint.InheritsBPM = !Convert.ToBoolean(Convert.ToInt32(values[6]));
                         tempTimingPoint.beatLength = values[1];
-                        if (values[1] > 0)
+                        if(values[1] > 0)
                         {
                             tempTimingPoint.bpm = Math.Round(60000 / tempTimingPoint.beatLength);
                         }
-                        else if (values[1] < 0)
+                        else if(values[1] < 0)
                         {
                             tempTimingPoint.velocity = Math.Abs(100 / tempTimingPoint.beatLength);
                         }
@@ -309,9 +309,9 @@ namespace BMAPI.v1
                         Info.TimingPoints.Add(tempTimingPoint);
                         this.TimingPoints.Add(tempTimingPoint);
                     }
-                    for (int i = 1, l = TimingPoints.Count; i < l; i++)
+                    for(int i = 1, l = TimingPoints.Count; i < l; i++)
                     {
-                        if (TimingPoints[i].bpm == 0)
+                        if(TimingPoints[i].bpm == 0)
                         {
                             TimingPoints[i].beatLength = TimingPoints[i - 1].beatLength;
                             TimingPoints[i].bpm = TimingPoints[i - 1].bpm;
@@ -319,13 +319,13 @@ namespace BMAPI.v1
                     }
 
                     //Do work for [Colours] section
-                    if (currentSection == "[Colours]")
+                    if(currentSection == "[Colours]")
                     {
                         string property = line.Substring(0, line.IndexOf(':', 1)).Trim();
                         string value = line.Substring(line.IndexOf(':', 1) + 1).Trim();
                         string[] reSplit = value.Split(',');
 
-                        if (property.Length > 5 && property.Substring(0, 5) == "Combo")
+                        if(property.Length > 5 && property.Substring(0, 5) == "Combo")
                         {
                             Combo newCombo = new Combo
                             {
@@ -346,7 +346,7 @@ namespace BMAPI.v1
                                 continue;
                             }
                         }
-                        else if (property.Length > 5 && property == "SliderBorder")
+                        else if(property.Length > 5 && property == "SliderBorder")
                         {
                             Info.SliderBorder = new Colour
                             {
@@ -358,7 +358,7 @@ namespace BMAPI.v1
                     }
 
                     //Do work for [HitObjects] section
-                    if (currentSection == "[HitObjects]")
+                    if(currentSection == "[HitObjects]")
                     {
                         string[] reSplit = line.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
                         CircleObject newObject = new CircleObject
@@ -369,11 +369,11 @@ namespace BMAPI.v1
                             Type = (HitObjectType)Convert.ToInt32(reSplit[3]),
                             Effect = (EffectType)Convert.ToInt32(reSplit[4])
                         };
-                        if ((newObject.Type & HitObjectType.Slider) > 0)
+                        if((newObject.Type & HitObjectType.Slider) > 0)
                         {
                             newObject = new SliderObject(newObject);
                             ((SliderObject)newObject).Velocity = Info.SliderMultiplier * TimingPointByTime(newObject.StartTime).SliderBpm / 600f;
-                            switch (reSplit[5].Substring(0, 1))
+                            switch(reSplit[5].Substring(0, 1))
                             {
                                 case "B":
                                     ((SliderObject)newObject).Type = SliderType.Bezier;
@@ -392,9 +392,9 @@ namespace BMAPI.v1
                             string[] pts = reSplit[5].Split(new[] { "|" }, StringSplitOptions.None);
 
                             ((SliderObject)newObject).Points.Add(newObject.Location + new Point2());
-                           
+
                             //Always exclude index 1, this will contain the type
-                            for (int i = 1; i <= pts.Length - 1; i++)
+                            for(int i = 1; i <= pts.Length - 1; i++)
                             {
                                 Point2 p = new Point2((float)Convert.ToDouble(pts[i].Substring(0, pts[i].IndexOf(":", StringComparison.InvariantCulture))),
                                                             (float)Convert.ToDouble(pts[i].Substring(pts[i].IndexOf(":", StringComparison.InvariantCulture) + 1)));
@@ -410,7 +410,7 @@ namespace BMAPI.v1
                             ((SliderObject)newObject).RepeatCount = Convert.ToInt32(reSplit[6]);
                             ((SliderObject)newObject).PixelLength = Convert.ToSingle(reSplit[7]);
                             float tempMaxPoints;
-                            if (float.TryParse(reSplit[7], out tempMaxPoints))
+                            if(float.TryParse(reSplit[7], out tempMaxPoints))
                             {
                                 ((SliderObject)newObject).MaxPoints = tempMaxPoints;
                             }
@@ -423,7 +423,7 @@ namespace BMAPI.v1
                             ((SliderObject)newObject).duration = duration;
 
                         }
-                        if ((newObject.Type & HitObjectType.Spinner) > 0)
+                        if((newObject.Type & HitObjectType.Spinner) > 0)
                         {
                             newObject = new SpinnerObject(newObject);
                             ((SpinnerObject)newObject).EndTime = (float)Convert.ToDouble(reSplit[5]);
@@ -434,12 +434,12 @@ namespace BMAPI.v1
             }
 
             //Copy the fields/properties of Info locally
-            foreach (FieldInfo fi in Info.GetType().GetFields())
+            foreach(FieldInfo fi in Info.GetType().GetFields())
             {
                 FieldInfo ff = GetType().GetField(fi.Name);
                 ff.SetValue(this, fi.GetValue(Info));
             }
-            foreach (PropertyInfo pi in Info.GetType().GetProperties())
+            foreach(PropertyInfo pi in Info.GetType().GetProperties())
             {
                 PropertyInfo ff = GetType().GetProperty(pi.Name);
                 ff.SetValue(this, pi.GetValue(Info, null), null);
@@ -448,9 +448,12 @@ namespace BMAPI.v1
 
         public TimingPoint TimingPointByTime(float time)
         {
-            for (var i = this.TimingPoints.Count - 1; i >= 0; i--)
+            for(var i = this.TimingPoints.Count - 1; i >= 0; i--)
             {
-                if (this.TimingPoints[i].Time <= time) { return this.TimingPoints[i]; }
+                if(this.TimingPoints[i].Time <= time)
+                {
+                    return this.TimingPoints[i];
+                }
             }
             return this.TimingPoints[0];
         }
@@ -470,47 +473,47 @@ namespace BMAPI.v1
             FieldInfo[] newFields = GetType().GetFields();
             FieldInfo[] oldFields = Info.GetType().GetFields();
 
-            foreach (FieldInfo f1 in newFields)
+            foreach(FieldInfo f1 in newFields)
             {
-                foreach (FieldInfo f2 in oldFields.Where(f2 => f1.Name == f2.Name))
+                foreach(FieldInfo f2 in oldFields.Where(f2 => f1.Name == f2.Name))
                 {
-                    switch (f1.Name)
+                    switch(f1.Name)
                     {
                         case "EditorBookmarks":
                             {
                                 List<int> temps = (List<int>)f1.GetValue(this);
-                                if (temps.Count != 0)
+                                if(temps.Count != 0)
                                     Save("General", "EditorBookmarks:" + string.Join(",", temps.Select(t => t.ToString(CultureInfo.InvariantCulture)).ToArray()));
                             }
                             break;
                         case "Bookmarks":
                             {
                                 List<int> temps = (List<int>)f1.GetValue(this);
-                                if (temps.Count != 0)
+                                if(temps.Count != 0)
                                     Save("Editor", "Bookmarks:" + string.Join(",", temps.Select(t => t.ToString(CultureInfo.InvariantCulture)).ToArray()));
                             }
                             break;
                         case "Tags":
                             {
                                 List<string> temps = (List<string>)f1.GetValue(this);
-                                if (temps.Count != 0)
+                                if(temps.Count != 0)
                                     Save("Metadata", "Tags:" + string.Join(" ", temps.ToArray()));
                             }
                             break;
                         case "Events":
-                            foreach (EventBase o in (IEnumerable<EventBase>)f1.GetValue(this))
+                            foreach(EventBase o in (IEnumerable<EventBase>)f1.GetValue(this))
                             {
-                                if (o.GetType() == typeof(ContentEvent))
+                                if(o.GetType() == typeof(ContentEvent))
                                 {
                                     ContentEvent backgroundInfo = (ContentEvent)o;
                                     Save("Events", "0," + o.StartTime + ",\"" + backgroundInfo.Filename + "\"");
                                 }
-                                else if (o.GetType() == typeof(BreakEvent))
+                                else if(o.GetType() == typeof(BreakEvent))
                                 {
                                     BreakEvent breakInfo = (BreakEvent)o;
                                     Save("Events", "2," + o.StartTime + "," + breakInfo.EndTime);
                                 }
-                                else if (o.GetType() == typeof(BackgroundColourEvent))
+                                else if(o.GetType() == typeof(BackgroundColourEvent))
                                 {
                                     BackgroundColourEvent colourInfo = (BackgroundColourEvent)o;
                                     Save("Events", "3," + o.StartTime + "," + colourInfo.Colour.R + "," + colourInfo.Colour.G + "," + colourInfo.Colour.B);
@@ -519,13 +522,13 @@ namespace BMAPI.v1
                             break;
                         case "TimingPoints":
                             {
-                                foreach (TimingPoint o in (IEnumerable<TimingPoint>)f1.GetValue(this))
+                                foreach(TimingPoint o in (IEnumerable<TimingPoint>)f1.GetValue(this))
                                     Save("TimingPoints", o.Time + "," + o.BpmDelay + "," + o.TimeSignature + "," + o.SampleSet + "," + o.CustomSampleSet + "," + o.VolumePercentage + "," + Convert.ToInt32(!o.InheritsBPM) + "," + (int)o.VisualOptions);
                             }
                             break;
                         case "ComboColours":
                             {
-                                foreach (Combo o in (IEnumerable<Combo>)f1.GetValue(this))
+                                foreach(Combo o in (IEnumerable<Combo>)f1.GetValue(this))
                                     Save("Colours", "Combo" + o.ComboNumber + ':' + o.Colour.R + "," + o.Colour.G + "," + o.Colour.B);
                             }
                             break;
@@ -538,19 +541,19 @@ namespace BMAPI.v1
                         //    }
                         //    break;
                         case "HitObjects":
-                            foreach (CircleObject obj in (IEnumerable<CircleObject>)f1.GetValue(this))
+                            foreach(CircleObject obj in (IEnumerable<CircleObject>)f1.GetValue(this))
                             {
-                                if (obj.GetType() == typeof(CircleObject))
+                                if(obj.GetType() == typeof(CircleObject))
                                 {
                                     Save("HitObjects", obj.Location.X + "," + obj.Location.Y + "," + obj.StartTime + "," + (int)obj.Type + "," + (int)obj.Effect);
                                 }
-                                else if (obj.GetType() == typeof(SliderObject))
+                                else if(obj.GetType() == typeof(SliderObject))
                                 {
                                     SliderObject sliderInfo = (SliderObject)obj;
                                     string pointString = sliderInfo.Points.Aggregate("", (current, p) => current + ("|" + p.X + ':' + p.Y));
                                     Save("HitObjects", obj.Location.X + "," + obj.Location.Y + "," + obj.StartTime + "," + (int)obj.Type + "," + (int)obj.Effect + "," + sliderInfo.Type.ToString().Substring(0, 1) + pointString + "," + sliderInfo.RepeatCount + "," + sliderInfo.MaxPoints);
                                 }
-                                else if (obj.GetType() == typeof(SpinnerObject))
+                                else if(obj.GetType() == typeof(SpinnerObject))
                                 {
                                     SpinnerObject spinnerInfo = (SpinnerObject)obj;
                                     Save("HitObjects", obj.Location.X + "," + obj.Location.Y + "," + obj.StartTime + "," + (int)obj.Type + "," + (int)obj.Effect + "," + spinnerInfo.EndTime);
@@ -558,20 +561,20 @@ namespace BMAPI.v1
                             }
                             break;
                         default:
-                            if (f1.Name != "Format" && f1.Name != "Filename" && f1.Name != "BeatmapHash")
+                            if(f1.Name != "Format" && f1.Name != "Filename" && f1.Name != "BeatmapHash")
                             {
-                                if (f1.GetValue(this) != null)
+                                if(f1.GetValue(this) != null)
                                 {
-                                    if (f2.GetValue(Info) != null)
+                                    if(f2.GetValue(Info) != null)
                                     {
-                                        if ((f1.GetValue(this).GetType() == typeof(GameMode)) || (f1.GetValue(this).GetType() == typeof(OverlayOptions)))
+                                        if((f1.GetValue(this).GetType() == typeof(GameMode)) || (f1.GetValue(this).GetType() == typeof(OverlayOptions)))
                                             Save(GetSection(f1.Name), f1.Name + ':' + (int)f1.GetValue(this));
                                         else
                                             Save(GetSection(f1.Name), f1.Name + ':' + f1.GetValue(this));
                                     }
                                     else
                                     {
-                                        if ((f2.GetValue(Info).GetType() == typeof(GameMode)) || (f2.GetValue(Info).GetType() == typeof(OverlayOptions)))
+                                        if((f2.GetValue(Info).GetType() == typeof(GameMode)) || (f2.GetValue(Info).GetType() == typeof(OverlayOptions)))
                                             Save(GetSection(f2.Name), f2.Name + ':' + (int)f2.GetValue(Info));
                                         else
                                             Save(GetSection(f2.Name), f2.Name + ':' + f2.GetValue(Info));
@@ -582,22 +585,22 @@ namespace BMAPI.v1
                     }
                 }
             }
-            foreach (PropertyInfo f1 in GetType().GetProperties())
+            foreach(PropertyInfo f1 in GetType().GetProperties())
             {
-                foreach (PropertyInfo f2 in Info.GetType().GetProperties().Where(f2 => f1.Name == f2.Name))
+                foreach(PropertyInfo f2 in Info.GetType().GetProperties().Where(f2 => f1.Name == f2.Name))
                 {
-                    if (f1.GetValue(this, null) != null)
+                    if(f1.GetValue(this, null) != null)
                     {
-                        if (f2.GetValue(Info, null) != null)
+                        if(f2.GetValue(Info, null) != null)
                         {
-                            if ((f1.GetValue(this, null).GetType() == typeof(GameMode)) || (f1.GetValue(this, null).GetType() == typeof(OverlayOptions)))
+                            if((f1.GetValue(this, null).GetType() == typeof(GameMode)) || (f1.GetValue(this, null).GetType() == typeof(OverlayOptions)))
                                 Save(GetSection(f1.Name), f1.Name + ':' + (int)f1.GetValue(this, null));
                             else
                                 Save(GetSection(f1.Name), f1.Name + ':' + f1.GetValue(this, null));
                         }
                         else
                         {
-                            if ((f2.GetValue(Info, null).GetType() == typeof(GameMode)) || (f2.GetValue(Info, null).GetType() == typeof(OverlayOptions)))
+                            if((f2.GetValue(Info, null).GetType() == typeof(GameMode)) || (f2.GetValue(Info, null).GetType() == typeof(OverlayOptions)))
                                 Save(GetSection(f2.Name), f2.Name + ':' + (int)f2.GetValue(Info, null));
                             else
                                 Save(GetSection(f2.Name), f2.Name + ':' + f2.GetValue(Info, null));
@@ -611,9 +614,9 @@ namespace BMAPI.v1
 
         private void Save(string section, string contents)
         {
-            if (section == "")
+            if(section == "")
                 WriteBuffer.Add(contents);
-            else if (WriteBuffer.Contains("[" + section + "]") == false)
+            else if(WriteBuffer.Contains("[" + section + "]") == false)
             {
                 WriteBuffer.Add("");
                 WriteBuffer.Add("[" + section + "]");
@@ -622,7 +625,7 @@ namespace BMAPI.v1
             }
             else
             {
-                if (WriteBuffer.IndexOf("[" + section + "]") + SectionLength[section] == WriteBuffer.Count)
+                if(WriteBuffer.IndexOf("[" + section + "]") + SectionLength[section] == WriteBuffer.Count)
                 {
                     WriteBuffer.Add(contents);
                     SectionLength[section] += 1;
@@ -637,25 +640,25 @@ namespace BMAPI.v1
 
         private void FinishSave(string filename)
         {
-            using (StreamWriter sw = new StreamWriter(filename))
+            using(StreamWriter sw = new StreamWriter(filename))
             {
-                foreach (string l in WriteBuffer)
+                foreach(string l in WriteBuffer)
                     sw.WriteLine(l);
             }
         }
 
         private string GetSection(string name)
         {
-            foreach (string k in BM_Sections.Keys.Where(k => k.Contains(name)))
+            foreach(string k in BM_Sections.Keys.Where(k => k.Contains(name)))
                 return BM_Sections[k];
             return "";
         }
 
         private string MD5FromFile(string fileName)
         {
-            using (MD5 md5 = MD5.Create())
+            using(MD5 md5 = MD5.Create())
             {
-                using (FileStream stream = File.OpenRead(fileName))
+                using(FileStream stream = File.OpenRead(fileName))
                     return BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLower();
             }
         }
@@ -672,16 +675,17 @@ namespace BMAPI.v1
             Dictionary<int, Point2> toChange = new Dictionary<int, Point2>();
             for(int i = HitObjects.Count - 1; i >= 0; --i)
             {
-                if (HitObjects[i].Location == new Point2(360,128))
+                /* not used
+                 * if (HitObjects[i].Location == new Point2(360,128))
                 {
                     int u = 0;
-                }
+                }*/
 
-                for (int j = i - 1; j >= 0 ; --j)
+                for(int j = i - 1; j >= 0; --j)
                 {
-                    if (HitObjects[i].StartTime - HitObjects[j].StartTime <= stackTimeWindow)
+                    if(HitObjects[i].StartTime - HitObjects[j].StartTime <= stackTimeWindow)
                     {
-                        if (HitObjects[i].Location == HitObjects[j].Location)
+                        if(HitObjects[i].Location == HitObjects[j].Location)
                         {
                             var newPoint = toChange.ContainsKey(i) ? new Point2(toChange[i].X - 4, toChange[i].Y - 4) : new Point2(HitObjects[i].Location.X - 4, HitObjects[i].Location.Y - 4);
                             toChange.Add(j, newPoint);
@@ -725,9 +729,9 @@ namespace BMAPI.v1
             }*/
         }
 
-        public override string ToString()
-        {
-            return Filename;
-        }
-    }
+		public override string ToString()
+		{
+			return this.Artist + " " + this.Title + " [" + this.Version + "]";
+		}
+	}
 }

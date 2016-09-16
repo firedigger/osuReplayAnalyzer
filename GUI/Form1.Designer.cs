@@ -37,11 +37,11 @@
             this.analyzeReplaysButton = new System.Windows.Forms.Button();
             this.openOsuDBButton = new System.Windows.Forms.Button();
             this.chooseMapButton = new System.Windows.Forms.Button();
-            this.reportSaveButton = new System.Windows.Forms.Button();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
             this.alertOutputCheckBox = new System.Windows.Forms.CheckBox();
             this.saveReportToFileCheckBox = new System.Windows.Forms.CheckBox();
             this.currentTaskLabel = new System.Windows.Forms.Label();
+            this.compareOneVSFolderButton = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // chooseReplayButton
@@ -53,6 +53,8 @@
             this.chooseReplayButton.Text = "Choose replays...";
             this.chooseReplayButton.UseVisualStyleBackColor = true;
             this.chooseReplayButton.Click += new System.EventHandler(this.button1_Click);
+            this.chooseReplayButton.MouseLeave += new System.EventHandler(this.chooseReplayButton_MouseLeave);
+            this.chooseReplayButton.MouseHover += new System.EventHandler(this.chooseReplayButton_MouseHover);
             // 
             // exitButton
             // 
@@ -73,15 +75,18 @@
             this.chooseReplaysFolderButton.Text = "Choose folder with replays...";
             this.chooseReplaysFolderButton.UseVisualStyleBackColor = true;
             this.chooseReplaysFolderButton.Click += new System.EventHandler(this.chooseReplaysFolderButton_Click);
+            this.chooseReplaysFolderButton.MouseLeave += new System.EventHandler(this.chooseReplaysFolderButton_MouseLeave);
+            this.chooseReplaysFolderButton.MouseHover += new System.EventHandler(this.chooseReplaysFolderButton_MouseHover);
             // 
             // compareAllReplaysButton
             // 
-            this.compareAllReplaysButton.Location = new System.Drawing.Point(350, 310);
+            this.compareAllReplaysButton.Location = new System.Drawing.Point(184, 262);
             this.compareAllReplaysButton.Name = "compareAllReplaysButton";
-            this.compareAllReplaysButton.Size = new System.Drawing.Size(143, 40);
+            this.compareAllReplaysButton.Size = new System.Drawing.Size(147, 40);
             this.compareAllReplaysButton.TabIndex = 3;
             this.compareAllReplaysButton.Text = "Compare all replays in folder";
             this.compareAllReplaysButton.UseVisualStyleBackColor = true;
+            this.compareAllReplaysButton.Click += new System.EventHandler(this.compareAllReplaysButton_Click);
             // 
             // analyzeReplayButton
             // 
@@ -95,12 +100,13 @@
             // 
             // compareReplaysButton
             // 
-            this.compareReplaysButton.Location = new System.Drawing.Point(184, 329);
+            this.compareReplaysButton.Location = new System.Drawing.Point(184, 233);
             this.compareReplaysButton.Name = "compareReplaysButton";
-            this.compareReplaysButton.Size = new System.Drawing.Size(109, 23);
+            this.compareReplaysButton.Size = new System.Drawing.Size(147, 23);
             this.compareReplaysButton.TabIndex = 5;
-            this.compareReplaysButton.Text = "Compare replays";
+            this.compareReplaysButton.Text = "Compare selected replays";
             this.compareReplaysButton.UseVisualStyleBackColor = true;
+            this.compareReplaysButton.Click += new System.EventHandler(this.compareReplaysButton_Click);
             // 
             // analyzeReplaysButton
             // 
@@ -116,11 +122,13 @@
             // 
             this.openOsuDBButton.Location = new System.Drawing.Point(549, 67);
             this.openOsuDBButton.Name = "openOsuDBButton";
-            this.openOsuDBButton.Size = new System.Drawing.Size(75, 23);
+            this.openOsuDBButton.Size = new System.Drawing.Size(83, 23);
             this.openOsuDBButton.TabIndex = 7;
-            this.openOsuDBButton.Text = "open osuDB";
+            this.openOsuDBButton.Text = "Open osuDB";
             this.openOsuDBButton.UseVisualStyleBackColor = true;
             this.openOsuDBButton.Click += new System.EventHandler(this.openOsuDBButton_Click);
+            this.openOsuDBButton.MouseLeave += new System.EventHandler(this.openOsuDBButton_MouseLeave);
+            this.openOsuDBButton.MouseHover += new System.EventHandler(this.openOsuDBButton_MouseHover);
             // 
             // chooseMapButton
             // 
@@ -131,15 +139,8 @@
             this.chooseMapButton.Text = "Choose map(.osu)";
             this.chooseMapButton.UseVisualStyleBackColor = true;
             this.chooseMapButton.Click += new System.EventHandler(this.chooseMapButton_Click);
-            // 
-            // reportSaveButton
-            // 
-            this.reportSaveButton.Location = new System.Drawing.Point(17, 309);
-            this.reportSaveButton.Name = "reportSaveButton";
-            this.reportSaveButton.Size = new System.Drawing.Size(104, 43);
-            this.reportSaveButton.TabIndex = 9;
-            this.reportSaveButton.Text = "Report save location";
-            this.reportSaveButton.UseVisualStyleBackColor = true;
+            this.chooseMapButton.MouseLeave += new System.EventHandler(this.chooseMapButton_MouseLeave);
+            this.chooseMapButton.MouseHover += new System.EventHandler(this.chooseMapButton_MouseHover);
             // 
             // progressBar1
             // 
@@ -164,8 +165,6 @@
             // saveReportToFileCheckBox
             // 
             this.saveReportToFileCheckBox.AutoSize = true;
-            this.saveReportToFileCheckBox.Checked = true;
-            this.saveReportToFileCheckBox.CheckState = System.Windows.Forms.CheckState.Checked;
             this.saveReportToFileCheckBox.Location = new System.Drawing.Point(12, 270);
             this.saveReportToFileCheckBox.Name = "saveReportToFileCheckBox";
             this.saveReportToFileCheckBox.Size = new System.Drawing.Size(109, 17);
@@ -176,21 +175,31 @@
             // currentTaskLabel
             // 
             this.currentTaskLabel.AutoSize = true;
-            this.currentTaskLabel.Location = new System.Drawing.Point(197, 520);
+            this.currentTaskLabel.Location = new System.Drawing.Point(14, 520);
             this.currentTaskLabel.Name = "currentTaskLabel";
             this.currentTaskLabel.Size = new System.Drawing.Size(0, 13);
             this.currentTaskLabel.TabIndex = 13;
+            // 
+            // compareOneVSFolderButton
+            // 
+            this.compareOneVSFolderButton.Location = new System.Drawing.Point(184, 308);
+            this.compareOneVSFolderButton.Name = "compareOneVSFolderButton";
+            this.compareOneVSFolderButton.Size = new System.Drawing.Size(147, 44);
+            this.compareOneVSFolderButton.TabIndex = 15;
+            this.compareOneVSFolderButton.Text = "Compare selected replays against folder";
+            this.compareOneVSFolderButton.UseVisualStyleBackColor = true;
+            this.compareOneVSFolderButton.Click += new System.EventHandler(this.compareOneVSFolderButton_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(689, 574);
+            this.Controls.Add(this.compareOneVSFolderButton);
             this.Controls.Add(this.currentTaskLabel);
             this.Controls.Add(this.saveReportToFileCheckBox);
             this.Controls.Add(this.alertOutputCheckBox);
             this.Controls.Add(this.progressBar1);
-            this.Controls.Add(this.reportSaveButton);
             this.Controls.Add(this.chooseMapButton);
             this.Controls.Add(this.openOsuDBButton);
             this.Controls.Add(this.analyzeReplaysButton);
@@ -200,6 +209,7 @@
             this.Controls.Add(this.chooseReplaysFolderButton);
             this.Controls.Add(this.exitButton);
             this.Controls.Add(this.chooseReplayButton);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Name = "Form1";
             this.Text = "osuReplayAnalyzer";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Form1_FormClosing);
@@ -219,11 +229,11 @@
         private System.Windows.Forms.Button analyzeReplaysButton;
         private System.Windows.Forms.Button openOsuDBButton;
         private System.Windows.Forms.Button chooseMapButton;
-        private System.Windows.Forms.Button reportSaveButton;
         private System.Windows.Forms.ProgressBar progressBar1;
         private System.Windows.Forms.CheckBox alertOutputCheckBox;
         private System.Windows.Forms.CheckBox saveReportToFileCheckBox;
         private System.Windows.Forms.Label currentTaskLabel;
+        private System.Windows.Forms.Button compareOneVSFolderButton;
     }
 }
 

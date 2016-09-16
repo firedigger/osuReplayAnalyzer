@@ -32,12 +32,18 @@ namespace Kajabity.Tools.Java
     /// (the characters 0-127 are the same) and forms the first part of the Unicode character set.  Within the
     /// application <see cref="string"/> are Unicode - but all values outside the basic US-ASCII set are escaped.
     /// </summary>
-    public class JavaProperties: Hashtable
+    public class JavaProperties : Hashtable
     {
         /// <summary>
         /// Gets a reference to the ISO-8859-1 encoding (code page 28592). This is the Java standard for .properties files.
         /// </summary>
-        internal static Encoding DefaultEncoding { get { return Encoding.GetEncoding( 28592 ); } }
+        internal static Encoding DefaultEncoding
+        {
+            get
+            {
+                return Encoding.GetEncoding(28592);
+            }
+        }
 
         /// <summary>
         /// A reference to an optional set of default properties - these values are returned
@@ -58,7 +64,7 @@ namespace Kajabity.Tools.Java
         /// </summary>
         /// <param name="defaults">A Hashtable that holds a set of defafult key value pairs to
         /// return when the requested key has not been set.</param>
-        public JavaProperties( Hashtable defaults )
+        public JavaProperties(Hashtable defaults)
         {
             this.defaults = defaults;
         }
@@ -68,10 +74,10 @@ namespace Kajabity.Tools.Java
         /// </summary>
         /// <param name="streamIn">An input stream to read properties from.</param>
         /// <exception cref="ParseException">If the stream source is invalid.</exception>
-        public void Load( Stream streamIn )
+        public void Load(Stream streamIn)
         {
-            JavaPropertyReader reader = new JavaPropertyReader( this );
-            reader.Parse( streamIn );
+            JavaPropertyReader reader = new JavaPropertyReader(this);
+            reader.Parse(streamIn);
         }
 
         /// <summary>
@@ -80,10 +86,10 @@ namespace Kajabity.Tools.Java
         /// </summary>
         /// <param name="streamIn">An input stream to read properties from.</param>
         /// <param name="encoding">The stream's encoding.</param>
-        public void Load( Stream streamIn, Encoding encoding )
+        public void Load(Stream streamIn, Encoding encoding)
         {
-            JavaPropertyReader reader = new JavaPropertyReader( this );
-            reader.Parse( streamIn, encoding );
+            JavaPropertyReader reader = new JavaPropertyReader(this);
+            reader.Parse(streamIn, encoding);
         }
 
         /// <summary>
@@ -95,10 +101,10 @@ namespace Kajabity.Tools.Java
         /// </summary>
         /// <param name="streamOut">An output stream to write the properties to.</param>
         /// <param name="comments">Optional additional comment to include at the head of the output.</param>
-        public void Store( Stream streamOut, string comments )
+        public void Store(Stream streamOut, string comments)
         {
-            JavaPropertyWriter writer = new JavaPropertyWriter( this );
-            writer.Write( streamOut, comments );
+            JavaPropertyWriter writer = new JavaPropertyWriter(this);
+            writer.Write(streamOut, comments);
         }
 
         /// <summary>
@@ -107,16 +113,16 @@ namespace Kajabity.Tools.Java
         /// </summary>
         /// <param name="key">The key whose value should be returned.</param>
         /// <returns>The value corresponding to the key - or null if not found.</returns>
-        public string GetProperty( string key )
+        public string GetProperty(string key)
         {
-            Object objectValue = this[ key ];
-            if( objectValue != null )
+            Object objectValue = this[key];
+            if(objectValue != null)
             {
-                return AsString( objectValue );
+                return AsString(objectValue);
             }
-            else if( defaults != null )
+            else if(defaults != null)
             {
-                return AsString( defaults[ key ] );
+                return AsString(defaults[key]);
             }
 
             return null;
@@ -129,9 +135,9 @@ namespace Kajabity.Tools.Java
         /// <param name="key">The key whose value should be returned.</param>
         /// <param name="defaultValue">The default value if the key is not found.</param>
         /// <returns>The value corresponding to the key - or null if not found.</returns>
-        public string GetProperty( string key, string defaultValue )
+        public string GetProperty(string key, string defaultValue)
         {
-            string val = GetProperty( key );
+            string val = GetProperty(key);
             return (val == null) ? defaultValue : val;
         }
 
@@ -141,10 +147,10 @@ namespace Kajabity.Tools.Java
         /// <param name="key">The key whose value is to be set.</param>
         /// <param name="newValue">The new value off the key.</param>
         /// <returns>The original value of the key - as a string.</returns>
-        public string SetProperty( string key, string newValue )
+        public string SetProperty(string key, string newValue)
         {
-            string oldValue = AsString( this[ key ] );
-            this[ key ] = newValue;
+            string oldValue = AsString(this[key]);
+            this[key] = newValue;
             return oldValue;
         }
 
@@ -156,19 +162,19 @@ namespace Kajabity.Tools.Java
         public IEnumerator PropertyNames()
         {
             Hashtable combined;
-            if( defaults != null )
+            if(defaults != null)
             {
-                combined = new Hashtable( defaults );
+                combined = new Hashtable(defaults);
 
-                for( IEnumerator e = this.Keys.GetEnumerator(); e.MoveNext(); )
+                for(IEnumerator e = this.Keys.GetEnumerator(); e.MoveNext();)
                 {
-                    string key = AsString( e.Current );
-                    combined.Add( key, this[ key ] );
+                    string key = AsString(e.Current);
+                    combined.Add(key, this[key]);
                 }
             }
             else
             {
-                combined = new Hashtable( this );
+                combined = new Hashtable(this);
             }
 
             return combined.Keys.GetEnumerator();
@@ -179,9 +185,9 @@ namespace Kajabity.Tools.Java
         /// </summary>
         /// <param name="o">An Object or null to be returned as a string.</param>
         /// <returns>string value of the object - or null.</returns>
-        private string AsString( Object o )
+        private string AsString(Object o)
         {
-            if( o == null )
+            if(o == null)
             {
                 return null;
             }

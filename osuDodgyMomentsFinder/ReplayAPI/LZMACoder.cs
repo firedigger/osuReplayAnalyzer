@@ -23,7 +23,7 @@ namespace ReplayAPI
                 CoderPropID.EndMarker
             };
 
-            object[] properties = 
+            object[] properties =
             {
                 //(1 << 16),
                 (1 << 21),
@@ -40,7 +40,7 @@ namespace ReplayAPI
             Encoder encoder = new Encoder();
             encoder.SetCoderProperties(propIDs, properties);
             encoder.WriteCoderProperties(outStream);
-            for (int i = 0; i < 8; i++)
+            for(int i = 0; i < 8; i++)
                 outStream.WriteByte((Byte)(inStream.Length >> (8 * i)));
             encoder.Code(inStream, outStream, -1, -1, null);
             outStream.Flush();
@@ -54,15 +54,15 @@ namespace ReplayAPI
             Decoder decoder = new Decoder();
 
             byte[] properties = new byte[5];
-            if (inStream.Read(properties, 0, 5) != 5)
+            if(inStream.Read(properties, 0, 5) != 5)
                 throw (new Exception("input .lzma is too short"));
             decoder.SetDecoderProperties(properties);
 
             long outSize = 0;
-            for (int i = 0; i < 8; i++)
+            for(int i = 0; i < 8; i++)
             {
                 int v = inStream.ReadByte();
-                if (v < 0)
+                if(v < 0)
                     break;
                 outSize |= ((long)(byte)v) << (8 * i);
             }

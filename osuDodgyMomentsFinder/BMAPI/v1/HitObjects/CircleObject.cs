@@ -4,7 +4,9 @@ namespace BMAPI.v1.HitObjects
 {
     public class CircleObject
     {
-        public CircleObject() { }
+        public CircleObject()
+        {
+        }
         public CircleObject(CircleObject baseInstance)
         {
             //Copy from baseInstance
@@ -17,8 +19,14 @@ namespace BMAPI.v1.HitObjects
 
         public Point2 Location = new Point2(0, 0);
         public double Radius = 80;
-        public float StartTime { get; set; }
-        public HitObjectType Type { get; set; }
+        public float StartTime
+        {
+            get; set;
+        }
+        public HitObjectType Type
+        {
+            get; set;
+        }
         public EffectType Effect = EffectType.None;
 
         public virtual bool ContainsPoint(Point2 Point)

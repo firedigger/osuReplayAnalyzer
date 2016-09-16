@@ -5,8 +5,14 @@ namespace BMAPI
 {
     public class Point2
     {
-        public float X { get; set; }
-        public float Y { get; set; }
+        public float X
+        {
+            get; set;
+        }
+        public float Y
+        {
+            get; set;
+        }
         public Point2()
         {
             X = Y = 0;
@@ -24,7 +30,7 @@ namespace BMAPI
         {
             get
             {
-                return (float)Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2));                
+                return (float)Math.Sqrt(Math.Pow(X, 2) + Math.Pow(Y, 2));
             }
         }
 
@@ -112,7 +118,8 @@ namespace BMAPI
         }
         public override string ToString()
         {
-            return String.Format("({0}, {1})", this.X, this.Y); ;
+            return String.Format("({0}, {1})", this.X, this.Y);
+            ;
         }
         public Point2 Lerp(Point2 other, float t)
         {

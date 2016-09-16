@@ -2,7 +2,9 @@
 {
     public class Combo
     {
-        public Combo() { }
+        public Combo()
+        {
+        }
         public Combo(Colour baseInstance)
         {
             Colour.R = baseInstance.R;

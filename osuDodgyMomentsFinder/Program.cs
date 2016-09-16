@@ -2,8 +2,8 @@
 using System.IO;
 using BMAPI.v1;
 using ReplayAPI;
-using BMAPI.v1.HitObjects;
 using System.Collections.Generic;
+using System.Text;
 
 namespace osuDodgyMomentsFinder
 {
@@ -13,7 +13,7 @@ namespace osuDodgyMomentsFinder
         public static Dictionary<string, Beatmap> processOsuDB(OsuDbAPI.OsuDbFile osuDB, string songsFolder)
         {
             Dictionary<string, Beatmap> dict = new Dictionary<string, Beatmap>();
-            foreach (OsuDbAPI.Beatmap dbBeatmap in osuDB.Beatmaps)
+            foreach(OsuDbAPI.Beatmap dbBeatmap in osuDB.Beatmaps)
             {
                 string beatmapPath = songsFolder + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
                 Beatmap map = new Beatmap(beatmapPath);
@@ -31,13 +31,13 @@ namespace osuDodgyMomentsFinder
 
             var replaysFiles = new List<string>();
             var mapsFiles = new List<string>();
-            foreach (FileInfo file in files)
+            foreach(FileInfo file in files)
             {
-                if (file.Extension == ".osr")
+                if(file.Extension == ".osr")
                 {
                     replaysFiles.Add(file.Name);
                 }
-                if (file.Extension == ".osu")
+                if(file.Extension == ".osu")
                 {
                     mapsFiles.Add(file.Name);
                 }
@@ -58,20 +58,20 @@ namespace osuDodgyMomentsFinder
             }
 
             //Add all the beatmaps from the osu DB
-            if (osuDB)
+            if(osuDB)
             {
-                foreach (OsuDbAPI.Beatmap dbBeatmap in osuDBmaps)
+                foreach(OsuDbAPI.Beatmap dbBeatmap in osuDBmaps)
                 {
                     string beatmapPath = MainControlFrame.Instance.pathSongs + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
                     Beatmap map = new Beatmap(beatmapPath);
-                    if (!dict.ContainsKey(map.BeatmapHash))
+                    if(!dict.ContainsKey(map.BeatmapHash))
                         dict.Add(map.BeatmapHash, map);
                 }
 
-                foreach (var replay in replays)
+                foreach(var replay in replays)
                 {
 
-                    if (dict.ContainsKey(replay.MapHash))
+                    if(dict.ContainsKey(replay.MapHash))
                     {
                         result.Add(new KeyValuePair<Beatmap, Replay>(dict[replay.MapHash], replay));
                     }
@@ -86,19 +86,26 @@ namespace osuDodgyMomentsFinder
         }
 
 
-        public static string ReplayAnalyzing(Beatmap beatmap, Replay replay)
+        public static StringBuilder ReplayAnalyzing(Beatmap beatmap, Replay replay)
         {
-            string res = "";
+            StringBuilder sb = new StringBuilder();
 
-            res += ("BEATMAP: " + beatmap.ToString() + "\n");
-            res += ("REPLAY: " + replay.ToString() + "\n");
+            sb.AppendLine("BEATMAP: " + beatmap.ToString());
+            sb.AppendLine("REPLAY: " + replay.ToString());
+            sb.AppendLine();
 
             ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
-            res += analyzer.MainInfo() + "\n";
-            res += analyzer.PixelPerfectInfo() + "\n";
-            res += analyzer.OveraimsInfo() + "\n";
+            sb.AppendLine(analyzer.MainInfo().ToString());
+            sb.AppendLine();
+            sb.AppendLine(analyzer.PixelPerfectInfo().ToString());
+            sb.AppendLine();
+            sb.AppendLine(analyzer.OveraimsInfo().ToString());
+            sb.AppendLine();
+            sb.AppendLine(analyzer.TeleportsInfo().ToString());
+            sb.AppendLine();
+            sb.AppendLine(analyzer.SingletapsInfo().ToString());
 
-            return res;
+            return sb;
         }
 
 
@@ -109,9 +116,9 @@ namespace osuDodgyMomentsFinder
 
             Console.Clear();
             var replaysFiles = new List<string>();
-            foreach (FileInfo file in files)
+            foreach(FileInfo file in files)
             {
-                if (file.Extension == ".osr")
+                if(file.Extension == ".osr")
                 {
                     replaysFiles.Add(file.Name);
                 }
@@ -126,14 +133,13 @@ namespace osuDodgyMomentsFinder
         {
             var replays = replaysFiles.ConvertAll((path) => new Replay(path, true));
 
-            for (int i = 0; i < replays.Count; ++i)
+            for(int i = 0; i < replays.Count; ++i)
             {
-                for (int j = i + 1; j < replays.Count; ++j)
+                for(int j = i + 1; j < replays.Count; ++j)
                 {
                     ReplayComparator comparator = new ReplayComparator(replays[i], replays[j]);
-                    //Console.WriteLine(replaysFiles[i] + " vs. " + replaysFiles[j]);
                     double diff = comparator.compareReplays();
-                    if (diff <= threshold)
+                    if(diff <= threshold)
                         Console.WriteLine(replaysFiles[i] + " vs. " + replaysFiles[j] + " = " + diff);
                 }
             }
@@ -142,7 +148,7 @@ namespace osuDodgyMomentsFinder
         public static void CompareReplays(string[] args)
         {
             var list = new List<string>();
-            for (int i = 0; i < args.Length; ++i)
+            for(int i = 0; i < args.Length; ++i)
                 list.Add(args[i]);
             CompareReplays(list, Double.MaxValue);
             Console.ReadKey();
@@ -153,15 +159,15 @@ namespace osuDodgyMomentsFinder
             var pairs = AssociateMapsReplays(true);
 
             string res = "";
-            foreach (var pair in pairs)
+            foreach(var pair in pairs)
             {
-                string result = ReplayAnalyzing(pair.Key, pair.Value);
-                if (oneFile)
+                string result = ReplayAnalyzing(pair.Key, pair.Value).ToString();
+                if(oneFile)
                     res += result;
                 else
                     File.WriteAllText(pair.Value.ToString() + ".osi", result);
             }
-            if (oneFile)
+            if(oneFile)
                 File.WriteAllText("FullAnalysis.osi", res);
 
         }
@@ -171,9 +177,9 @@ namespace osuDodgyMomentsFinder
             var maps = MainControlFrame.Instance.osuDbP.Beatmaps;
 
             string beatmapPath = "";
-            foreach (OsuDbAPI.Beatmap dbBeatmap in maps)
+            foreach(OsuDbAPI.Beatmap dbBeatmap in maps)
             {
-                if (dbBeatmap.Hash == replay.MapHash)
+                if(dbBeatmap.Hash == replay.MapHash)
                 {
                     beatmapPath = MainControlFrame.Instance.pathSongs + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
                     break;
@@ -198,7 +204,7 @@ namespace osuDodgyMomentsFinder
 
         public static void Main(string[] args)
         {
-            if (File.Exists(MainControlFrame.Instance.pathSettings))
+            if(File.Exists(MainControlFrame.Instance.pathSettings))
             {
                 MainControlFrame.Instance.LoadSettings();
             }
@@ -224,7 +230,7 @@ namespace osuDodgyMomentsFinder
             }
 
 
-            if (args.Length == 0)
+            if(args.Length == 0)
             {
                 Console.WriteLine("Welcome the firedigger's replay analyzer. Use one of 3 options");
                 Console.WriteLine("-i for getting info about a certain replay");
@@ -233,23 +239,23 @@ namespace osuDodgyMomentsFinder
                 Console.ReadKey();
                 return;
             }
-            if (args[0] == "-ia")
+            if(args[0] == "-ia")
             {
                 ReplayAnalyzingAll(true);
             }
-            if (args[0] == "-i")
+            if(args[0] == "-i")
             {
                 //if (args.Length == 1)
                 //    args = UIUtils.getArgsFromUser();
                 Console.WriteLine(ReplayAnalyzing(new Replay(args[1], true)));
             }
-            if (args[0] == "-c")
+            if(args[0] == "-c")
                 ReplayComparison(args.SubArray(1));
-            if (args[0] == "-cr")
+            if(args[0] == "-cr")
                 CompareReplays(args.SubArray(1));
-            if (args[0] == "-s")
+            if(args[0] == "-s")
             {
-                if (args.Length == 1)
+                if(args.Length == 1)
                     args = UIUtils.getArgsFromUser();
                 CursorSpeed(new Beatmap(args[1]), new Replay(args[2], true));
             }

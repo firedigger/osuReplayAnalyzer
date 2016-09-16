@@ -2,13 +2,10 @@
 using ReplayAPI;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace osuDodgyMomentsFinder
 {
-    class ReplayComparator
+    public class ReplayComparator
     {
         public Replay newReplay;
         public Replay oldReplay;

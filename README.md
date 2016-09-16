@@ -1,26 +1,45 @@
+# osu!ReplayAnalyzer
+
 ### Build status
 [![Build status](https://travis-ci.org/firedigger/osuReplayAnalyzer.svg?branch=master)](https://travis-ci.org/firedigger/osuReplayAnalyzer)
 
-# osuReplayAnalyzer
+About
+--
+This is a program that works as a client-sided 'anti-cheat' for the game [osu!](https://osu.ppy.sh/).  
+It accepts replay files and beatmaps as an input, then performs heuristic analysis on the provided replay files and points out suspicious parameters that show up while analyzing the replay. Including *but not limited to*:
 
-This is an osu! anticheat based on heuristic analysis. It analyzes a player's replay and points to specific moments that should be investigated further. For example, it might tell you the location of an over-aimed hit, which is often seen in relax hackers.
+* Indicators of macro-bots ('relax bots') such as key press time.
+* Over-aims and edge-hits ('pixel perfect hits').
+* Incorrect interval of timing between each replay frame (timescale detection).
+* Behavior that suggest robotic aim.
+* Interval between key presses.
+* Cursor teleportations, indicator of badly coded replay stealing software or touchscreen plays.
 
-![](https://puu.sh/qaRdJ/5ec2d47a27.png)
+Usage
+--
+CLI
+___
+Simply open the program (`osuDodgyMomentsFinder.exe`) and it will provide you the following text:
 
+	Welcome the firedigger's replay analyzer. Use one of 3 options
+	-i for getting info about a certain replay
+	-c for comparing all the replays in the current folder against each other
+	-cr for comparing the replays from command line args
 
-# How to use
+GUI
+___
+Alternatively, you could use the GUI.  
+It's very self-explainatory! Choose a map or navigate to your osu! database file, select a replay or a folder that contains replay files and choose your desired analyzer setting.
 
-In all instances, you start by navigating command prompt towards the .exe, typing the executable name followed up by arguments. Arguments will be used to tell the program what you want it to do.
+Screenshots
+--
+### CLI
+___
+![Screenshot of the osu!ReplayAnalyzer CLI](https://i.imgur.com/OEsGmpe.png)
 
-Example usage: > osuDodgyMomentsFinder.exe -ia
+### GUI
+___
+![Screenshot of the osu!ReplayAnalyzer GUI](https://i.imgur.com/aVGMyjz.png)
 
-###Argument formats:
-**single replay** Argument "-i", the program will ask you to pick a replay/beatmap combo from the same folder as the executable.
-
-**analyze all replays in folder** Argument "-ia". A FullAnalysis.osi file will be created. Open it with notepad or another editor.
-
-**compare replays** Arguments "-cr <replay1> <replay2> <..:>".
-
-**compare all replays in folder** Argument "-c".
-
-**calculate cursor speed info** Argument "-s". Program will ask you to pick a replay.
+### Note:
+* A re-design of the GUI in WPF would be appreciated, hit us up with [a pull request](https://github.com/firedigger/osuReplayAnalyzer/pulls) if you're interested!

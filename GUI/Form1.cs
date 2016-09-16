@@ -16,7 +16,8 @@ namespace GUI
 {
     public partial class Form1 : Form
     {
-        string[] replayFilePath;
+        List<Replay> replays;
+        //string[] replayFilePath;
         string osuFilePath;
         Dictionary<string, string> mapsDB;
 
@@ -45,8 +46,21 @@ namespace GUI
 
             if (replayFileDialogue.ShowDialog() == DialogResult.OK)
             {
-                //settings.pathReplays = replayFileDialogue.FileName.;
-                replayFilePath = replayFileDialogue.FileNames;
+                replays = new List<Replay>();
+                string log = "Loaded replays:\n";
+                foreach(var replayFile in replayFileDialogue.FileNames)
+                {
+                    try
+                    {
+                        replays.Add(new Replay(replayFile, true));
+                        log += replayFile + "\n";
+                    }
+                    catch (Exception exception)
+                    {
+                        log += "Failed to process " + replayFile + " (" + exception.Message + ")\n";
+                    }
+                }
+                MessageBox.Show(log);
             }
 
         }
@@ -102,17 +116,17 @@ namespace GUI
         {
             Beatmap map = null;
             string res = "";
-            for (int i = 0; i < replayFilePath.Length; ++i)
+            for (int i = 0; i < replays.Count; ++i)
             {
-                progressBar1.Value = (int)((100.0 / replayFilePath.Length) * i);
-                Replay replay = new Replay(replayFilePath[i], true);
+                progressBar1.Value = (int)((100.0 / replays.Count) * i);
+                Replay replay = replays[i];
 
                 map = findBeatmapInOsuDB(replay);
 
                 if (map != null)
                     res += osuDodgyMomentsFinder.Program.ReplayAnalyzing(map, replay);
                 else
-                    res += replayFilePath[i] + " does not correspond to the selected map\n";
+                    res += replay.Filename + " does not correspond to any known map\n";
             }
             progressBar1.Value = 100;
             saveResult(res);
@@ -141,7 +155,7 @@ namespace GUI
             if (saveReportToFileCheckBox.Checked)
             {
                 SaveFileDialog saveReportDialogue = new SaveFileDialog();
-                saveReportDialogue.FileName = "report " + DateTime.Now.ToString("MMMM dd, yyyy H-mm-ss") + ".txt";
+                saveReportDialogue.FileName = "Report " + DateTime.Now.ToString("MMMM dd, yyyy H-mm-ss") + ".txt";
                 saveReportDialogue.Filter = "All Files|*.*;";
 
                 if (saveReportDialogue.ShowDialog() == DialogResult.OK)
@@ -150,7 +164,13 @@ namespace GUI
                 }
             }
             if (alertOutputCheckBox.Checked)
-                MessageBox.Show(res);
+            {
+                reportDialog dialog = new reportDialog();
+                dialog.textBox1.Text = res;
+                //dialog.Size = new Size(500,500);
+                dialog.textBox1.ScrollBars = ScrollBars.Vertical;
+                dialog.Show();
+            }
         }
 
         private void openOsuDBButton_Click(object sender, EventArgs e)
@@ -203,20 +223,160 @@ namespace GUI
             for(int i = 0; i < replaysFiles.Count; ++i)
             {
                 string path = replaysFiles[i];
+
+                progressBar1.Value = (int)((100.0 / replaysFiles.Count) * i);
+                Replay replay = new Replay(path, true);
+                Beatmap map = findBeatmapInOsuDB(replay);
+                res += osuDodgyMomentsFinder.Program.ReplayAnalyzing(map, replay).ToString();
+                
+            }
+            progressBar1.Value = 100;
+            saveResult(res);
+        }
+
+        private void testButton_Click(object sender, EventArgs e)
+        {
+            /*Beatmap map = null;
+            string res = "";
+            for (int i = 0; i < replayFilePath.Length; ++i)
+            {
+                progressBar1.Value = (int)((100.0 / replayFilePath.Length) * i);
+                Replay replay = new Replay(replayFilePath[i], true);
+
+                map = findBeatmapInOsuDB(replay);
+
+                if (map != null)
+                    res += new ReplayAnalyzer(map, replay).outputDistances();
+                else
+                    res += replayFilePath[i] + " does not correspond to the selected map\n";
+            }
+            progressBar1.Value = 100;
+            saveResult(res);*/
+        }
+
+        private string AvsBReplaysCompare(List<Replay> replaysA, List<Replay> replaysB)
+        {
+            string res = "";
+            progressBar1.Value = 0;
+            int count = replaysA.Count * replaysB.Count;
+            for (int i = 0; i < replaysA.Count; ++i)
+            {
+                for (int j = 0; j < replaysB.Count; ++j)
+                {
+                    ReplayComparator comparator = new ReplayComparator(replaysA[i], replaysB[j]);
+                    double diff = comparator.compareReplays();
+                    if (diff < 10)
+                        res += "IDENTICAL REPLAY PAIR: ";
+                    res += replaysA[i].Filename + " vs. " + replaysB[j].Filename + " = " + diff + "\n";
+                    progressBar1.Value = (int)((100.0 / count) * i);
+                }
+            }
+            progressBar1.Value = 100;
+
+            return res;
+        }
+
+        private string AllVSReplaysCompare(List<Replay> replays)
+        {
+            string res = "";
+            progressBar1.Value = 0;
+            int count = replays.Count * (replays.Count - 1) / 2;
+            for (int i = 0; i < replays.Count; ++i)
+            {
+                for (int j = i + 1; j < replays.Count; ++j)
+                {
+                    ReplayComparator comparator = new ReplayComparator(replays[i], replays[j]);
+                    double diff = comparator.compareReplays();
+                    if (diff < 10)
+                        res += "IDENTICAL REPLAY PAIR: ";
+                    res += replays[i].Filename + " vs. " + replays[j].Filename + " = " + diff + "\n";
+                    progressBar1.Value = (int)((100.0 / count) * i);
+                }
+            }
+            progressBar1.Value = 100;
+
+            return res;
+        }
+
+        private void compareReplaysButton_Click(object sender, EventArgs e)
+        {
+            saveResult(AllVSReplaysCompare(replays));
+        }
+
+        private void compareAllReplaysButton_Click(object sender, EventArgs e)
+        {
+            string res = "";
+
+            var pairs = new Dictionary<Beatmap, Replay>();
+
+            DirectoryInfo directory = new DirectoryInfo(settings.pathReplays);
+            FileInfo[] files = directory.GetFiles();
+
+            var replaysFiles = new List<string>();
+            foreach (FileInfo file in files)
+            {
+                if (file.Extension == ".osr")
+                {
+                    replaysFiles.Add(file.FullName);
+                }
+            }
+
+            progressBar1.Value = 0;
+            var replays = new List<Replay>();
+            for (int i = 0; i < replaysFiles.Count; ++i)
+            {
+                string path = replaysFiles[i];
                 try
                 {
                     progressBar1.Value = (int)((100.0 / replaysFiles.Count) * i);
                     Replay replay = new Replay(path, true);
-                    Beatmap map = findBeatmapInOsuDB(replay);
-                    res += osuDodgyMomentsFinder.Program.ReplayAnalyzing(map, replay);
+                    replays.Add(replay);    
                 }
                 catch (Exception exception)
                 {
-                    res += "Failed to process " + path +  " (" + exception.Message + ")\n";
+                    res += "Failed to process " + path + " (" + exception.Message + ")\n";
                 }
             }
-            progressBar1.Value = 100;
-            saveResult(res);
+
+            saveResult(res + AllVSReplaysCompare(replays));
+        }
+
+        private void compareOneVSFolderButton_Click(object sender, EventArgs e)
+        {
+            string res = "";
+
+            var pairs = new Dictionary<Beatmap, Replay>();
+
+            DirectoryInfo directory = new DirectoryInfo(settings.pathReplays);
+            FileInfo[] files = directory.GetFiles();
+
+            var replaysFiles = new List<string>();
+            foreach (FileInfo file in files)
+            {
+                if (file.Extension == ".osr")
+                {
+                    replaysFiles.Add(file.FullName);
+                }
+            }
+
+            progressBar1.Value = 0;
+            var replays = new List<Replay>();
+            for (int i = 0; i < replaysFiles.Count; ++i)
+            {
+                string path = replaysFiles[i];
+                try
+                {
+                    progressBar1.Value = (int)((100.0 / replaysFiles.Count) * i);
+                    Replay replay = new Replay(path, true);
+                    replays.Add(replay);
+                }
+                catch (Exception exception)
+                {
+                    res += "Failed to process " + path + " (" + exception.Message + ")\n";
+                }
+            }
+
+            saveResult(res + AvsBReplaysCompare(this.replays, replays));
         }
     }
 }

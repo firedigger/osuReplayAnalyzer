@@ -13,14 +13,20 @@ namespace ReplayViewer.Curves
     }
     public abstract class Curve
     {
-        public SliderType CurveType { get; set; }
+        public SliderType CurveType
+        {
+            get; set;
+        }
         // list of only the control points relevent to this curve
         protected List<Vector2> Points;
         // points along the curve where segment length, 't' interpolation value, and location is recorded
         protected List<DistanceTime> CurveSnapshots;
         // when the curve should stop being drawn
         // this only applies if this is the last curve in the slider
-        public float PixelLength { get; set; }
+        public float PixelLength
+        {
+            get; set;
+        }
 
         public Curve(SliderType sliderType)
         {
@@ -53,21 +59,21 @@ namespace ReplayViewer.Curves
         private float CalculateLength(float prec = 0.01f)
         {
             float sum = 0;
-            for (float f = 0; f < 1f; f += prec)
+            for(float f = 0; f < 1f; f += prec)
             {
-                if (f > 1)
+                if(f > 1)
                 {
                     f = 1;
                 }
                 float fplus = f + prec;
-                if (fplus > 1)
+                if(fplus > 1)
                 {
                     fplus = 1;
                 }
                 Vector2 a = this.Interpolate(f);
                 Vector2 b = this.Interpolate(fplus);
                 float distance = this.Distance(a, b);
-                if (sum == 0 || (this.PixelLength > 0 && distance + sum <= this.PixelLength))
+                if(sum == 0 || (this.PixelLength > 0 && distance + sum <= this.PixelLength))
                 {
                     sum += distance;
                     // take a snapshot of the current position, t value, and distance along the curve
@@ -122,12 +128,12 @@ namespace ReplayViewer.Curves
             // we want to find
             int high = this.CurveSnapshots.Count - 1;
             int low = 0;
-            while (low <= high)
+            while(low <= high)
             {
                 int mid = (high + low) / 2;
-                if (mid == high || mid == low)
+                if(mid == high || mid == low)
                 {
-                    if (mid + 1 >= this.CurveSnapshots.Count)
+                    if(mid + 1 >= this.CurveSnapshots.Count)
                     {
                         return this.CurveSnapshots[mid].point;
                     }
@@ -139,7 +145,7 @@ namespace ReplayViewer.Curves
                         return this.Lerp(a.point, b.point, (d - a.distance) / (b.distance - a.distance));
                     }
                 }
-                if (this.CurveSnapshots[mid].distance > d)
+                if(this.CurveSnapshots[mid].distance > d)
                 {
                     high = mid;
                 }
