@@ -1,33 +1,31 @@
 ﻿using BMAPI.v1.HitObjects;
 using ReplayAPI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace osuDodgyMomentsFinder
 {
-    class HitFrame
+    public class HitFrame
     {
         public ReplayFrame frame { get; set; }
         public CircleObject note { get; set; }
+        public Keys key { get; set; }
+        public double perfectness { get; set; }
 
-        public HitFrame(CircleObject note, ReplayFrame frame)
+        public HitFrame(CircleObject note, ReplayFrame frame, Keys key)
         {
             this.frame = frame;
             this.note = note;
+            this.key = key;
         }
 
-       
-        public override string ToString() 
+
+        public override string ToString()
         {
             string res = "";
-            if ((note.Type.HasFlag(BMAPI.v1.HitObjectType.Circle)))
+            if((note.Type.HasFlag(BMAPI.v1.HitObjectType.Circle)))
             {
                 res += "Circle";
             }
-            if ((note.Type.HasFlag(BMAPI.v1.HitObjectType.Slider)))
+            if((note.Type.HasFlag(BMAPI.v1.HitObjectType.Slider)))
             {
                 res += "Slider";
             }

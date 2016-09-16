@@ -14,6 +14,7 @@ namespace ReplayAPI
         public KeyCounter keyCounter { get; set; }
         public int combo { get; set; }
         public double travelledDistance { get; set; }
+        public double travelledDistanceDiff { get; set; }
         public double speed { get; set; }
         public double acceleration { get; set; }
     }

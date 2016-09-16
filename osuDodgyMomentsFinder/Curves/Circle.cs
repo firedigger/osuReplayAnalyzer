@@ -11,7 +11,7 @@ namespace ReplayViewer.Curves
 
         protected override Vector2 Interpolate(float t)
         {
-            if (this.Points.Count == 3)
+            if(this.Points.Count == 3)
             {
                 // essentially we are just drawing a circle between two angles
                 Vector2 center = this.CircleCenter(this.Points[0], this.Points[1], this.Points[2]);
@@ -22,16 +22,16 @@ namespace ReplayViewer.Curves
                 float twopi = (float)(2 * Math.PI);
                 // determine which direction the circle should be drawn
                 // we want it so that the curve passes throught all the points
-                if (this.IsClockwise(this.Points[0], this.Points[1], this.Points[2]))
+                if(this.IsClockwise(this.Points[0], this.Points[1], this.Points[2]))
                 {
-                    while (end < start)
+                    while(end < start)
                     {
                         end += twopi;
                     }
                 }
                 else
                 {
-                    while (start < end)
+                    while(start < end)
                     {
                         start += twopi;
                     }
@@ -54,11 +54,11 @@ namespace ReplayViewer.Curves
             float yDelta_b = (float)(C.Y - B.Y);
             float xDelta_b = (float)(C.X - B.X);
             Vector2 center = new Vector2();
-            if (xDelta_a == 0)
+            if(xDelta_a == 0)
             {
                 xDelta_a = 0.00001f;
             }
-            if (xDelta_b == 0)
+            if(xDelta_b == 0)
             {
                 xDelta_b = 0.00001f;
             }

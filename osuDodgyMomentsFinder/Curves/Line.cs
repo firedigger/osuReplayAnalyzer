@@ -1,5 +1,4 @@
 ﻿using osuDodgyMomentsFinder;
-using System;
 
 namespace ReplayViewer.Curves
 {
@@ -11,7 +10,7 @@ namespace ReplayViewer.Curves
 
         protected override Vector2 Interpolate(float t)
         {
-            if (this.Points.Count != 2)
+            if(this.Points.Count != 2)
             {
                 return Vector2.Zero;
             }

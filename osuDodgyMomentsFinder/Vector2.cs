@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace osuDodgyMomentsFinder
 {
@@ -30,22 +26,34 @@ namespace osuDodgyMomentsFinder
 
         public static Vector2 Zero
         {
-            get { return zeroVector; }
+            get
+            {
+                return zeroVector;
+            }
         }
 
         public static Vector2 One
         {
-            get { return unitVector; }
+            get
+            {
+                return unitVector;
+            }
         }
 
         public static Vector2 UnitX
         {
-            get { return unitXVector; }
+            get
+            {
+                return unitXVector;
+            }
         }
 
         public static Vector2 UnitY
         {
-            get { return unitYVector; }
+            get
+            {
+                return unitYVector;
+            }
         }
 
         #endregion Properties
@@ -147,7 +155,7 @@ namespace osuDodgyMomentsFinder
 
         public override bool Equals(object obj)
         {
-            if (obj is Vector2)
+            if(obj is Vector2)
             {
                 return Equals((Vector2)this);
             }

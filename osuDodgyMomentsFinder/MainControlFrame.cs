@@ -1,10 +1,6 @@
 ﻿using Kajabity.Tools.Java;
 using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace osuDodgyMomentsFinder
 {
@@ -12,10 +8,22 @@ namespace osuDodgyMomentsFinder
     {
         private static MainControlFrame instance;
 
-        public OsuDbAPI.OsuDbFile osuDbP { get; set; }
-        public string pathSongs { get; set; }
-        public string pathReplays { get; set; }
-        public string pathOsuDB { get; set; }
+        public OsuDbAPI.OsuDbFile osuDbP
+        {
+            get; set;
+        }
+        public string pathSongs
+        {
+            get; set;
+        }
+        public string pathReplays
+        {
+            get; set;
+        }
+        public string pathOsuDB
+        {
+            get; set;
+        }
         public string pathSettings = "settings.txt";
 
         public MainControlFrame()
@@ -29,7 +37,7 @@ namespace osuDodgyMomentsFinder
         {
             get
             {
-                if (instance == null)
+                if(instance == null)
                 {
                     instance = new MainControlFrame();
                 }
@@ -39,7 +47,7 @@ namespace osuDodgyMomentsFinder
 
         public void LoadSettings()
         {
-            FileStream stream = new FileStream(pathSettings,FileMode.Open);
+            FileStream stream = new FileStream(pathSettings, FileMode.Open);
             JavaProperties settings = new JavaProperties();
             settings.Load(stream);
             pathSongs = settings.GetProperty("pathSongs");

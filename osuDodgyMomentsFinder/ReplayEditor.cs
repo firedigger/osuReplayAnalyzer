@@ -1,15 +1,13 @@
 ﻿using ReplayAPI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace osuDodgyMomentsFinder
 {
     class ReplayEditor
     {
-        public Replay replay { get; private set; }
+        public Replay replay
+        {
+            get; private set;
+        }
 
         public ReplayEditor(Replay replay)
         {

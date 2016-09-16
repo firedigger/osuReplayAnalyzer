@@ -1,5 +1,4 @@
 ﻿using osuDodgyMomentsFinder;
-using System;
 
 namespace ReplayViewer.Curves
 {

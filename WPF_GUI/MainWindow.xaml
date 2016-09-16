@@ -1,0 +1,25 @@
+﻿<Window x:Class="WPF_GUI.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WPF_GUI"
+        mc:Ignorable="d"
+		Closing="Window_Closing"
+        Title="osu!ReplayAnalyzer" Height="255" Width="480.98" Background="#FF252525" ResizeMode="CanMinimize" Icon="Resources/osu!.ico">
+	<Grid Margin="0,0,-6,0">
+		<CheckBox x:Name="checkBox_AlertOutput" Content="Alert output" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,87,0,0" Background="White" Foreground="White" Height="15" Width="84" IsChecked="True"/>
+		<CheckBox x:Name="checkBox_SaveToFile" Content="Save to file" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,116,0,0" Background="White" Foreground="White" Height="15" Width="78"/>
+		<ProgressBar x:Name="progressBar_Analyzing" HorizontalAlignment="Left" Width="445" Margin="10,184,0,0" Height="18" VerticalAlignment="Top"/>
+		<Button x:Name="button_ChooseReplays" Content="Choose Replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="105" Margin="10,15,0,0" Height="20" Click="button_ChooseReplays_Click"/>
+		<Button x:Name="button_AnalyzeReplays" Content="Analyze Replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="105" Margin="10,48,0,0" Height="20" Click="button_AnalyzeReplays_Click"/>
+		<Button x:Name="button_ChooseFolder" Content="Choose Folder&#xD;&#xA;With Replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="341,15,0,0" Height="37" Click="button_ChooseFolder_Click"/>
+		<Button x:Name="button_AnalyzeFolder" Content="Analyze Folder" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="228,48,0,0" Height="20" Click="button_AnalyzeFolder_Click"/>
+		<Button x:Name="button_ChooseMap" Content="Choose Map (.osu)" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="120,15,0,0" Height="20" Click="button_ChooseMap_Click"/>
+		<Button x:Name="button_OpenDatabase" Content="Open osu!.db" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="120,48,0,0" Height="20" Click="button_OpenDatabase_Click"/>
+		<Button x:Name="button_CompareSelected" Content="Compare Selected Replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="228,15,0,0" Height="20" Click="button_CompareSelected_Click"/>
+		<Button x:Name="button_CompareFolder" Content="Compare All&#xD;&#xA;From Folder" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="341,57,0,0" Height="36" Click="button_CompareFolder_Click"/>
+		<Button x:Name="button_CompareSelectedAgainstFolder" Content="Compare Selected&#xD;&#xA;Against Folder" HorizontalAlignment="Left"  VerticalAlignment="Top"  Width="103" Margin="341,98,0,0" Height="38" Click="button_CompareSelectedAgainstFolder_Click"/>
+		<Label x:Name="labelTask" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,153,0,0" Foreground="White"/>
+	</Grid>
+</Window>

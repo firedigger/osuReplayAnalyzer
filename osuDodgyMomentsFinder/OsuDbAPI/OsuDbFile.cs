@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.IO;
 
 namespace OsuDbAPI
@@ -13,18 +10,44 @@ namespace OsuDbAPI
     */
     public class OsuDbFile
     {
-        public int Version { get; set; }
-        public int FolderCount { get; set; }
-        public bool AccountUnlocked { get; set; }
-        public DateTime DateUntilUnlock { get; set; }
-        public string PlayerName { get; set; }
-        public int NumBeatmaps { get; set; }
-        public List<Beatmap> Beatmaps { get; set; }
+        public int Version
+        {
+            get; set;
+        }
+        public int FolderCount
+        {
+            get; set;
+        }
+        public bool AccountUnlocked
+        {
+            get; set;
+        }
+        public DateTime DateUntilUnlock
+        {
+            get; set;
+        }
+        public string PlayerName
+        {
+            get; set;
+        }
+        public int NumBeatmaps
+        {
+            get; set;
+        }
+        public List<Beatmap> Beatmaps
+        {
+            get; set;
+        }
 
         private BinaryReader fileReader;
 
         public OsuDbFile(string fname)
         {
+            if(fname.Length == 0)
+            {
+                return;
+            }
+
             this.fileReader = new BinaryReader(new FileStream(fname, FileMode.Open, FileAccess.Read, FileShare.Read));
             this.Version = this.fileReader.ReadInt32();
             this.FolderCount = this.fileReader.ReadInt32();
@@ -33,7 +56,7 @@ namespace OsuDbAPI
             this.PlayerName = this.readNullableString();
             this.NumBeatmaps = this.fileReader.ReadInt32();
             this.Beatmaps = new List<Beatmap>(this.NumBeatmaps);
-            for (int i = 0; i < this.NumBeatmaps; i++)
+            for(int i = 0; i < this.NumBeatmaps; i++)
             {
                 this.Beatmaps.Add(this.readBeatmap());
             }
@@ -42,7 +65,7 @@ namespace OsuDbAPI
 
         private string readNullableString()
         {
-            if (this.fileReader.ReadByte() != 0x0B)
+            if(this.fileReader.ReadByte() != 0x0B)
             {
                 return null;
             }
@@ -90,10 +113,10 @@ namespace OsuDbAPI
             beatmap.HPDrain = this.fileReader.ReadSingle();
             beatmap.OverallDifficulty = this.fileReader.ReadSingle();
             beatmap.SliderVelocity = this.fileReader.ReadDouble();
-            for (int i = 0; i < 4; i++)
+            for(int i = 0; i < 4; i++)
             {
                 n = this.fileReader.ReadInt32();
-                for (int j = 0; j < n; j++)
+                for(int j = 0; j < n; j++)
                 {
                     this.readIntDoublePair();
                 }
@@ -102,7 +125,7 @@ namespace OsuDbAPI
             beatmap.DrainTimeMilliseconds = this.fileReader.ReadInt32();
             beatmap.PreviewPoint = this.fileReader.ReadInt32();
             n = this.fileReader.ReadInt32();
-            for (int j = 0; j < n; j++)
+            for(int j = 0; j < n; j++)
             {
                 this.readTimingPoint();
             }

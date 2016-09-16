@@ -4,8 +4,6 @@ using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace osuDodgyMomentsFinder
 {
@@ -16,11 +14,23 @@ namespace osuDodgyMomentsFinder
             return (-a + 2 * b - c) / h / h;
         }
 
+        public static void outputValues<T>(List<T> values, string fileName)
+        {
+            string res = "";
+            foreach (var value in values)
+            {
+                res += value + ",";
+            }
+            if (res.Length > 0)
+                res.Remove(res.Length - 1);
+
+            File.WriteAllText(fileName, res);
+        }
 
         //Assumes sorted
         public static double median(List<double> values)
         {
-            if (values.Count % 2 == 0)
+            if(values.Count % 2 == 0)
                 return (values[values.Count / 2 - 1] + values[values.Count / 2]) / 2;
             else
                 return values[values.Count / 2];
@@ -84,7 +94,7 @@ namespace osuDodgyMomentsFinder
         public static string[] getArgsFromUser()
         {
             DirectoryInfo directory = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory);
-            
+
 
             // get beatmap
             Console.WriteLine("SONG LIST: ");
@@ -94,7 +104,7 @@ namespace osuDodgyMomentsFinder
             int counter = 1;
             foreach(FileInfo file in files)
             {
-                if (file.Extension == ".osu")
+                if(file.Extension == ".osu")
                 {
                     beatmaps.Add(file.Name);
                     Console.WriteLine(counter.ToString() + "\t" + file.Name);
@@ -104,16 +114,16 @@ namespace osuDodgyMomentsFinder
 
             Console.Write("Pick number: ");
             int songID = int.Parse(Console.ReadLine());
-            
+
 
             // get replay
             Console.Clear();
             Console.WriteLine("PLAY LIST: ");
             List<string> replays = new List<string>();
             counter = 1;
-            foreach (FileInfo file in files)
+            foreach(FileInfo file in files)
             {
-                if (file.Extension == ".osr")
+                if(file.Extension == ".osr")
                 {
                     replays.Add(file.Name);
                     Console.WriteLine(counter.ToString() + "\t" + file.Name);

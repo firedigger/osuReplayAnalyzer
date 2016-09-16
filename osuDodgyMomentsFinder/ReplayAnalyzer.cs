@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace osuDodgyMomentsFinder
 {
@@ -15,7 +14,7 @@ namespace osuDodgyMomentsFinder
      * Initializing the class is a task of associating every keypress with an object hit
      * After that all the procedural checks on suspicious moment become possible
      */
-    class ReplayAnalyzer
+    public class ReplayAnalyzer
     {
         //The beatmap
         private Beatmap beatmap;
@@ -34,17 +33,36 @@ namespace osuDodgyMomentsFinder
 
 
         //The list of pair of a <hit, object hit>
-        public List<HitFrame> hits { get; private set; }
-        public List<CircleObject> miss { get; private set; }
-        public List<BreakEvent> breaks { get; private set; }
-        public CursorMovement cursorData { get; private set; }
-        public List<ReplayFrame> times { get; private set; }
+        public List<HitFrame> hits
+        {
+            get; private set;
+        }
+        public List<CircleObject> miss
+        {
+            get; private set;
+        }
+        public List<BreakEvent> breaks
+        {
+            get; private set;
+        }
+        public List<SpinnerObject> spinners
+        {
+            get; private set;
+        }
+        public CursorMovement cursorData
+        {
+            get; private set;
+        }
+        public List<ReplayFrame> times
+        {
+            get; private set;
+        }
 
         private void applyHardrock()
         {
             replay.AxisFlip = true;
             beatmap.CircleSize = beatmap.CircleSize * 1.3f;
-            if (beatmap.CircleSize > 10)
+            if(beatmap.CircleSize > 10)
                 beatmap.CircleSize = 10;
             this.replay.ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
         }
@@ -53,9 +71,20 @@ namespace osuDodgyMomentsFinder
         {
             foreach(var event1 in this.beatmap.Events)
             {
-                if (event1.GetType() == typeof(BreakEvent))
+                if(event1.GetType() == typeof(BreakEvent))
                 {
                     this.breaks.Add((BreakEvent)event1);
+                }
+            }
+        }
+
+        private void selectSpinners()
+        {
+            foreach (var obj in this.beatmap.HitObjects)
+            {
+                if (obj.Type.HasFlag(HitObjectType.Spinner))
+                {
+                    this.spinners.Add((SpinnerObject)obj);
                 }
             }
         }
@@ -69,7 +98,7 @@ namespace osuDodgyMomentsFinder
             Keys lastKey = Keys.None;
             KeyCounter keyCounter = new KeyCounter();
 
-            if ((replay.Mods & Mods.HardRock) > 0)
+            if((replay.Mods & Mods.HardRock) > 0)
             {
                 applyHardrock();
             }
@@ -77,46 +106,52 @@ namespace osuDodgyMomentsFinder
             int breakIndex = 0;
             int combo = 0;
 
-            for (int i = 0; i < beatmap.HitObjects.Count; ++i)
+            for(int i = 0; i < beatmap.HitObjects.Count; ++i)
             {
                 CircleObject note = beatmap.HitObjects[i];
                 bool flag = false;
-                
-                if ((note.Type & HitObjectType.Spinner) > 0)
+
+                if((note.Type & HitObjectType.Spinner) > 0)
                     continue;
 
-                for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
+                for(int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
                 {
                     ReplayFrame frame = replay.ReplayFrames[j];
 
-                    if (((frame.Keys & lastKey) ^ frame.Keys) > 0)
+                    if(((frame.Keys & lastKey) ^ frame.Keys) > 0)
                         pressReady = true;
 
-                    if (breakIndex < breaks.Count && frame.Time > breaks[breakIndex].EndTime)
+                    if(breakIndex < breaks.Count && frame.Time > breaks[breakIndex].EndTime)
                     {
                         ++breakIndex;
                     }
 
-                    if (frame.Time >= beatmap.HitObjects[0].StartTime - hitTimeWindow && (breakIndex >= breaks.Count || frame.Time < this.breaks[breakIndex].StartTime - hitTimeWindow))
+                    if(frame.Time >= beatmap.HitObjects[0].StartTime - hitTimeWindow && (breakIndex >= breaks.Count || frame.Time < this.breaks[breakIndex].StartTime - hitTimeWindow))
                     {
                         keyCounter.Update(lastKey, frame.Keys);
                     }
 
                     frame.keyCounter = new KeyCounter(keyCounter);
 
-                    if (frame.Keys != Keys.None && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && pressReady)
+                    if (frame.Time - note.StartTime > hitTimeWindow)
+                        break;
+
+                    if(frame.Keys != Keys.None && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && pressReady)
                     {
                         ++combo;
                         frame.combo = combo;
                         flag = true;
                         pressReady = false;
+                        Keys pressedKey = (frame.Keys & lastKey) ^ frame.Keys;
+                        HitFrame hitFrame = new HitFrame(note, frame, pressedKey);
+                        hitFrame.perfectness = Utils.pixelPerfectHitFactor(hitFrame.frame,hitFrame.note);
+                        hits.Add(hitFrame);
                         lastKey = frame.Keys;
-                        hits.Add(new HitFrame(note, frame));
                         keyIndex = j + 1;
                         break;
                     }
 
-                    if (frame.Keys != Keys.None)
+                    if(frame.Keys != Keys.None)
                         pressReady = false;
 
                     lastKey = frame.Keys;
@@ -125,7 +160,7 @@ namespace osuDodgyMomentsFinder
 
                 }
 
-                if (!flag)
+                if(!flag)
                 {
                     ++misses;
                     miss.Add(note);
@@ -134,63 +169,16 @@ namespace osuDodgyMomentsFinder
             }
         }
 
-        private List<double> calcSliderHoldTime()
-        {
-            List<double> result = new List<double>();
-
-            foreach(var hit in this.hits)
-            {
-                if (hit.note.Type == HitObjectType.Slider && ((SliderObject)hit.note).RepeatCount == 1)
-                {
-                    int i = this.replay.ReplayFrames.FindIndex(x => x == hit.frame);
-
-                    if (i >= 4250)
-                    {
-                        int u = 0;
-                    }
-
-                    Keys key = getKey(this.replay.ReplayFrames[i - 1].Keys, this.replay.ReplayFrames[i].Keys);
-
-                    if (key == Keys.None)
-                        throw new Exception();
-                    
-                    while(replay.ReplayFrames[i].Keys.HasFlag(key))
-                    {
-                        ++i;
-                    }
-
-                    SliderObject hitObjectAsSlider = (SliderObject)hit.note;
-                    double objectLength = (hitObjectAsSlider.TotalLength / hitObjectAsSlider.Velocity) * hitObjectAsSlider.RepeatCount;
-                    //double objectLength = ((hitObjectAsSlider.SegmentEndTime - hitObjectAsSlider.StartTime) * hitObjectAsSlider.RepeatCount);
-                    double delta = replay.ReplayFrames[i].Time - hitObjectAsSlider.StartTime - objectLength;
-
-                    if (delta > 100)
-                    {
-                        int u = 0;
-                    }
-
-                    if (!double.IsNaN(delta))
-                    {
-                        result.Add(delta);
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        public double calcSliderHoldTimeVariance()
-        {
-            var list = calcSliderHoldTime();
-            return Utils.variance(list);
-        }
-
         private Keys getKey(Keys last, Keys current)
         {
-            if (!last.HasFlag(Keys.M1) && current.HasFlag(Keys.M1) && !current.HasFlag(Keys.K1)) return Keys.M1;
-            if (!last.HasFlag(Keys.M2) && current.HasFlag(Keys.M2) && !current.HasFlag(Keys.K2)) return Keys.M2;
-            if (!last.HasFlag(Keys.K1) && current.HasFlag(Keys.K1)) return Keys.K1;
-            if (!last.HasFlag(Keys.K2) && current.HasFlag(Keys.K2)) return Keys.K2;
+            if(!last.HasFlag(Keys.M1) && current.HasFlag(Keys.M1) && !current.HasFlag(Keys.K1))
+                return Keys.M1;
+            if(!last.HasFlag(Keys.M2) && current.HasFlag(Keys.M2) && !current.HasFlag(Keys.K2))
+                return Keys.M2;
+            if(!last.HasFlag(Keys.K1) && current.HasFlag(Keys.K1))
+                return Keys.K1;
+            if(!last.HasFlag(Keys.K2) && current.HasFlag(Keys.K2))
+                return Keys.K2;
             return Keys.None;
         }
 
@@ -200,26 +188,26 @@ namespace osuDodgyMomentsFinder
 
             bool k1 = false, k2 = false;
             double k1_timer = 0, k2_timer = 0;
-            foreach (var frame in this.replay.ReplayFrames)
+            foreach(var frame in this.replay.ReplayFrames)
             {
                 var hit = this.hits.Find(x => x.frame.Equals(frame));
-                
-                if (hit != null && hit.note.Type == HitObjectType.Circle)
+
+                if(hit != null && hit.note.Type == HitObjectType.Circle)
                 {
-                    if (!k1 && frame.Keys.HasFlag(Keys.K1))
+                    if(!k1 && frame.Keys.HasFlag(Keys.K1))
                         k1 = true;
 
-                    if (!k2 && frame.Keys.HasFlag(Keys.K2))
+                    if(!k2 && frame.Keys.HasFlag(Keys.K2))
                         k2 = true;
                 }
 
                 //k1
-                if (k1 && frame.Keys.HasFlag(Keys.K1))
+                if(k1 && frame.Keys.HasFlag(Keys.K1))
                 {
                     k1_timer += frame.TimeDiff;
                 }
 
-                if (k1 && !frame.Keys.HasFlag(Keys.K1))
+                if(k1 && !frame.Keys.HasFlag(Keys.K1))
                 {
                     k1 = false;
                     result.Add(k1_timer);
@@ -227,18 +215,21 @@ namespace osuDodgyMomentsFinder
                 }
 
                 //k2
-                if (k2 && frame.Keys.HasFlag(Keys.K2))
+                if(k2 && frame.Keys.HasFlag(Keys.K2))
                 {
                     k2_timer += frame.TimeDiff;
                 }
 
-                if (k2 && !frame.Keys.HasFlag(Keys.K2))
+                if(k2 && !frame.Keys.HasFlag(Keys.K2))
                 {
                     k2 = false;
                     result.Add(k2_timer);
                     k2_timer = 0;
                 }
             }
+
+            if (result.Count == 0)
+                result.Add(-1);
 
             return result;
         }
@@ -248,16 +239,18 @@ namespace osuDodgyMomentsFinder
             return calcPressIntervals().Average();
         }
 
-        public List<ReplayFrame> checkTappingConsistency()
+        public List<KeyValuePair<HitFrame, HitFrame>> checkTappingConsistency()
         {
-            List<ReplayFrame> times = new List<ReplayFrame>();
+            var times = new List<KeyValuePair<HitFrame, HitFrame>>();
+
+            double limit = (90 * (replay.Mods.HasFlag(Mods.DoubleTime) ? 1.5 : 1));
 
             for (int i = 0; i < hits.Count - 1; ++i)
             {
                 HitFrame hit1 = hits[i], hit2 = hits[i + 1];
 
-                if (hit2.note.StartTime - hit1.note.StartTime <= 100 && hit1.frame.Keys == hit2.frame.Keys)
-                    times.Add(hit1.frame);
+                if (((hit2.frame.Time - hit1.frame.Time <= limit) || (hit2.note.StartTime - hit1.note.StartTime <= limit)) && ((hit1.key & hit2.key) > 0))
+                    times.Add(new KeyValuePair<HitFrame, HitFrame>(hit1, hit2));
             }
 
             return times;
@@ -267,64 +260,96 @@ namespace osuDodgyMomentsFinder
         {
             List<ReplayFrame> times = new List<ReplayFrame>();
 
-            for(int i = 0; i < replay.ReplayFrames.Count - 1; ++i)
+            int spinnerIndex = 0;
+            for (int i = 2; i < this.times.Count - 1; ++i)
             {
-                ReplayFrame frame1 = replay.ReplayFrames[i], frame2 = replay.ReplayFrames[i + 1];
+                ReplayFrame frame = this.times[i + 1], prev = this.times[i];
 
-                if (frame2.travelledDistance - frame1.travelledDistance > 20)
-                    times.Add(frame1);
+                if (spinnerIndex < spinners.Count && frame.Time > spinners[spinnerIndex].EndTime)
+                {
+                    ++spinnerIndex;
+                }
+
+                if (isTeleport(prev, frame) && (spinnerIndex >= spinners.Count || frame.Time < spinners[spinnerIndex].StartTime) && prev.travelledDistanceDiff > 0)
+                {
+                    times.Add(frame);
+                }
             }
 
             return times;
         }
 
+        private bool isTeleport(ReplayFrame prev, ReplayFrame frame)
+        {
+            if (double.IsInfinity(frame.speed))
+                return true;
+
+            if (frame.speed >= 5 && frame.travelledDistanceDiff >= 110)
+                return true;
+
+            return false;
+        }
+
+        public string outputDistances() 
+        {
+            string res = "";
+            foreach (var value in findCursorTeleports())
+            {
+                res += value.travelledDistanceDiff + ",";
+            }
+            return res.Remove(res.Length - 1);
+        }
+
         public bool isCheating()
         {
-            if (this.replay.PlayerName == "Axarious" || this.replay.PlayerName == "Bikko")
+            if(this.replay.PlayerName == "Axarious" || this.replay.PlayerName == "Bikko")
                 return true;
             return false;
         }
 
         public double calculateAverageFrameTimeDiff()
         {
-            return this.times.ConvertAll(x => x.TimeDiff).Average();
+            return times.ConvertAll(x => x.TimeDiff).Average();
         }
 
-        
+
         private void calculateCursorSpeed()
         {
             double distance = 0;
 
-            this.times = replay.ReplayFrames.Where(x => x.TimeDiff > 0 && x.TimeDiff <= 40).ToList();
+            times = replay.ReplayFrames.Where(x => x.TimeDiff > 0).ToList();
 
-            if (times != null && times.Count > 0)
+            if(times != null && times.Count > 0)
             {
 
                 times[0].travelledDistance = distance;
+                times[0].travelledDistanceDiff = 0;
                 for (int i = 0; i < times.Count - 1; ++i)
                 {
                     ReplayFrame from = times[i], to = times[i + 1];
-                    distance += Utils.dist(from.X, from.Y, to.X, to.Y);
+                    double newDist = Utils.dist(from.X, from.Y, to.X, to.Y);
+                    distance += newDist;
                     to.travelledDistance = distance;
+                    to.travelledDistanceDiff = newDist;
                 }
 
                 times[0].speed = 0;
-                for (int i = 1; i < times.Count - 1; ++i)
+                for(int i = 0; i < times.Count - 1; ++i)
                 {
-                    ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+                    ReplayFrame to = times[i + 1], current = times[i];
 
-                    double V = (to.travelledDistance - from.travelledDistance) / (to.TimeDiff + current.TimeDiff);
-                    current.speed = V;
+                    double V = (to.travelledDistance - current.travelledDistance) / (to.TimeDiff);
+                    to.speed = V;
                 }
                 times.Last().speed = 0;
 
                 times[0].acceleration = 0;
-                for (int i = 1; i < times.Count - 1; ++i)
+                for(int i = 0; i < times.Count - 1; ++i)
                 {
-                    ReplayFrame from = times[i - 1], to = times[i + 1], current = times[i];
+                    ReplayFrame to = times[i + 1], current = times[i];
 
-                    double A = (to.speed - from.speed) / (to.TimeDiff + current.TimeDiff);
-                    current.acceleration = A;
+                    double A = (to.speed - current.speed) / (to.TimeDiff);
+                    to.acceleration = A;
                 }
                 times.Last().acceleration = 0;
             }
@@ -353,7 +378,7 @@ namespace osuDodgyMomentsFinder
         public string outputAcceleration()
         {
             string res = "";
-            foreach (var value in this.times.ConvertAll(x => x.acceleration))
+            foreach(var value in this.times.ConvertAll(x => x.acceleration))
             {
                 res += value + ",";
             }
@@ -363,7 +388,7 @@ namespace osuDodgyMomentsFinder
         public string outputTime()
         {
             string res = "";
-            foreach (var value in this.times.ConvertAll(x => x.Time))
+            foreach(var value in this.times.ConvertAll(x => x.Time))
             {
                 res += value + ",";
             }
@@ -375,16 +400,16 @@ namespace osuDodgyMomentsFinder
         {
             var result = new List<HitFrame>();
             int keyIndex = 0;
-            for (int i = 0; i < beatmap.HitObjects.Count; ++i)
+            for(int i = 0; i < beatmap.HitObjects.Count; ++i)
             {
                 CircleObject note = beatmap.HitObjects[i];
                 bool hover = false;
 
                 //searches for init circle object hover
-                for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
+                for(int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
                 {
                     ReplayFrame frame = replay.ReplayFrames[j];
-                    if (note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && Math.Abs(frame.Time - note.StartTime) <= approachTimeWindow)
+                    if(note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && Math.Abs(frame.Time - note.StartTime) <= approachTimeWindow)
                     {
                         hover = true;
                         keyIndex = j + 1;
@@ -392,39 +417,41 @@ namespace osuDodgyMomentsFinder
                     }
 
                 }
-                if (hover)
+                if(hover)
                 {
                     //searches for leaving of the object (dehover)
-                    for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
+                    for(int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
                     {
                         ReplayFrame frame = replay.ReplayFrames[j];
-                        if (!note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
+                        if(!note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
                         {
                             keyIndex = j + 1;
                             break;
                         }
                     }
 
-                    if (keyIndex >= replay.ReplayFrames.Count)
+                    if(keyIndex >= replay.ReplayFrames.Count)
                         return result;
 
                     //Check whether the hit happened BEFORE the dehover
                     int noteIndex = -1;
-                    for (int l = 0; l < this.hits.Count; ++l)
-                        if (hits[l].note.Equals(note) && hits[l].frame.Time > replay.ReplayFrames[keyIndex].Time)
+                    for(int l = 0; l < this.hits.Count; ++l)
+                        if(hits[l].note.Equals(note) && hits[l].frame.Time > replay.ReplayFrames[keyIndex].Time)
                         {
                             noteIndex = l;
                             break;
                         }
 
                     if (noteIndex != -1)
+                    {
                         result.Add(hits[noteIndex]);
+                    }
 
                 }
             }
             return result;
         }
-        
+
 
         //Recalculate the highest CS value for which the player would still have the same amount of misses
         public double bestCSValue()
@@ -460,6 +487,9 @@ namespace osuDodgyMomentsFinder
             this.beatmap = beatmap;
             this.replay = replay;
 
+            if (!replay.fullLoaded)
+                throw new Exception(replay.Filename + " IS NOT FULL");
+
             this.circleRadius = beatmap.HitObjects[0].Radius;
             this.hitTimeWindow = calcTimeWindow(beatmap.OverallDifficulty);
 
@@ -468,11 +498,12 @@ namespace osuDodgyMomentsFinder
             hits = new List<HitFrame>();
             miss = new List<CircleObject>();
             breaks = new List<BreakEvent>();
+            spinners = new List<SpinnerObject>();
 
             selectBreaks();
+            selectSpinners();
             associateHits();
             calculateCursorSpeed();
-            findCursorTeleports();
         }
 
         public double findBestPixelHit()
@@ -484,11 +515,11 @@ namespace osuDodgyMomentsFinder
         {
             List<double> result = new List<double>();
 
-            foreach (var pair in this.hits)
+            foreach(var pair in this.hits)
             {
                 double factor = Utils.pixelPerfectHitFactor(pair.frame, pair.note);
 
-                if (factor >= threshold)
+                if(factor >= threshold)
                 {
                     result.Add(pair.note.StartTime);
                 }
@@ -503,9 +534,9 @@ namespace osuDodgyMomentsFinder
         {
             var pixelPerfectHits = new List<KeyValuePair<double, HitFrame>>();
 
-            foreach (var pair in this.hits)
+            foreach(var pair in this.hits)
             {
-                double factor = Utils.pixelPerfectHitFactor(pair.frame, pair.note);
+                double factor = pair.perfectness;
                 if(factor >= threshold)
                     pixelPerfectHits.Add(new KeyValuePair<double, HitFrame>(factor, pair));
             }
@@ -519,7 +550,7 @@ namespace osuDodgyMomentsFinder
         private double ur = -1;
         public double unstableRate()
         {
-            if (ur >= 0)
+            if(ur >= 0)
                 return ur;
             List<double> values = this.hits.ConvertAll((pair) => (double)pair.frame.Time - pair.note.StartTime);
             ur = 10 * Utils.variance(values);
@@ -527,65 +558,120 @@ namespace osuDodgyMomentsFinder
         }
 
 
-        public string MainInfo()
+        public StringBuilder MainInfo()
         {
-            string res = "";
-            res += "GENERIC INFO\n";
+            StringBuilder sb = new StringBuilder();
 
-            res += "Unstable rate = " + unstableRate() + "\n";
-            if (unstableRate() < 50)
-                res += "WARNING! Unstable rate is too low (auto)\n";
-            res += "The best CS value = " + bestCSValue() + "\n";
+            sb.AppendLine("GENERIC INFO");
+            sb.AppendLine("Unstable rate = " + unstableRate());
 
-            res += "Cursor acceleration variance = " + calcAccelerationVariance() + "\n";
+            if(unstableRate() < 47.5)
+            {
+                sb.AppendLine("WARNING! Unstable rate is too low (auto)");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("The best CS value = " + bestCSValue());
+
+            var cursorAcceleration = accelerationList();
+            //var cursorspeed = speedList();
+            sb.AppendLine("Cursor acceleration mean = " + cursorAcceleration.Average());
+            sb.AppendLine("Cursor acceleration variance = " + Utils.variance(cursorAcceleration));
 
             double averageFrameTimeDiff = calculateAverageFrameTimeDiff();
-            res += "Average frame time difference = " + averageFrameTimeDiff + "ms\n";
-            if (replay.Mods.HasFlag(Mods.DoubleTime) && averageFrameTimeDiff < 17)
+            sb.AppendLine("Average frame time difference = " + averageFrameTimeDiff + "ms");
+
+            if((replay.Mods.HasFlag(Mods.DoubleTime) && averageFrameTimeDiff < 17.35) || (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiff < 12.55))
             {
-                res += "WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods(timewarp)\n";
-            }
-            if (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiff < 12)
-            {
-                res += "WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods(timewarp)\n";
+                sb.AppendLine("WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods (timewarp)!");
+                sb.AppendLine();
             }
 
-            res += "Average Key press time interval = " + averagePressIntervals() + "ms\n";
-            res += "Slider hold time variance = " + calcSliderHoldTimeVariance() + "ms\n";
-            return res;
+            sb.AppendLine("Average Key press time interval = " + averagePressIntervals() + "ms");
+
+            return sb;
         }
 
-        public string PixelPerfectInfo()
+        public StringBuilder PixelPerfectInfo()
         {
-            string res = "";
-            res += "PIXEL PERFECT\n";
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("PIXEL PERFECT");
 
             var pixelPerfectHits = findSortedPixelPerfectHits(1000, 0.98);
             double bestPxPerfect = findBestPixelHit();
-            res += "The best pixel perfect hit = " + bestPxPerfect + "\n";
-            if (bestPxPerfect < 0.5)
-                res += "WARNING! Player is clicking into the center of the note too consistently (autohack or 2 star map)\n";
-            res += "Pixel perfect hits: " + pixelPerfectHits.Count + "\n";
-            foreach (var hit in pixelPerfectHits)
-                res += "* " + hit.Key +  " " + hit.Value + "\n";
-            var LOLpixelPerfectHits = findSortedPixelPerfectHits(100, 0.99);
-            if (LOLpixelPerfectHits.Count > 40)
-                res += "WARNING! Player is constantly doing pixel perfect hits (relax)\n";
+            sb.AppendLine("The best pixel perfect hit = " + bestPxPerfect);
 
-            return res;
+            if(bestPxPerfect < 0.5)
+            {
+                sb.AppendLine("WARNING! Player is clicking into the center of the note too consistently (autohack or 2* map)");
+                sb.AppendLine();
+            }
+
+            sb.AppendLine("Pixel perfect hits: " + pixelPerfectHits.Count);
+
+            foreach(var hit in pixelPerfectHits)
+            {
+                sb.AppendLine("* " + hit.Key + " " + hit.Value);
+            }
+
+            var LOLpixelPerfectHits = findSortedPixelPerfectHits(100, 0.99);
+
+            if(LOLpixelPerfectHits.Count > 40)
+            {
+                sb.AppendLine("WARNING! Player is constantly doing pixel perfect hits (relax)");
+                sb.AppendLine();
+            }
+
+            return sb;
         }
-        
-        public string OveraimsInfo()
+
+        public StringBuilder OveraimsInfo()
         {
-            string res = "";
-            res += "OVER-AIM\n";
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("OVER-AIM");
 
             var overAims = findOverAimHits();
-            res += "Over-aim count: " + overAims.Count + "\n";
-            foreach (var hit in overAims)
-                res += "* " + hit + "\n";
+            sb.AppendLine("Over-aim count: " + overAims.Count);
 
-            return res;
+            foreach(var hit in overAims)
+            {
+                sb.AppendLine("* " + hit + " perfectness rate = " + hit.perfectness);
+            }
+
+            return sb;
         }
+
+        public StringBuilder TeleportsInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Cursor teleports");
+
+            var teleports = findCursorTeleports();
+            sb.AppendLine("Teleports count: " + teleports.Count);
+
+            foreach (var frame in teleports)
+            {
+                sb.AppendLine("* " + frame.Time + "ms " + frame.travelledDistanceDiff + "px");
+            }
+
+            return sb;
+        }
+
+        public StringBuilder SingletapsInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Singletaps");
+
+            var singletaps = checkTappingConsistency();
+            sb.AppendLine("Fast singletaps count: " + singletaps.Count);
+
+            foreach (var frame in singletaps)
+            {
+                sb.AppendLine("* Object at " + frame.Key.note.StartTime + "ms "  + frame.Key.key + " singletapped with next at " + frame.Value.note.StartTime + " (" + (frame.Value.frame.Time - frame.Key.frame.Time) + "ms frame diff) " + " " + (frame.Key.frame.Time - frame.Key.note.StartTime) + "ms and " + (frame.Value.frame.Time - frame.Value.note.StartTime) + "ms error. ");
+            }
+            return sb;
+        }
+
+
     }
 }
