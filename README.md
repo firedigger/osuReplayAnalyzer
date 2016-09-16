@@ -1,3 +1,6 @@
+### Build status
+[![Build status](https://travis-ci.org/firedigger/osuReplayAnalyzer.svg?branch=master)](https://travis-ci.org/firedigger/osuReplayAnalyzer)
+
 # osuReplayAnalyzer
 
 This is an osu! anticheat based on heuristic analysis. It analyzes a player's replay and points to specific moments that should be investigated further. For example, it might tell you the location of an over-aimed hit, which is often seen in relax hackers.
@@ -11,7 +14,7 @@ In all instances, you start by navigating command prompt towards the .exe, typin
 
 Example usage: > osuDodgyMomentsFinder.exe -ia
 
-###Argument formats: 
+###Argument formats:
 **single replay** Argument "-i", the program will ask you to pick a replay/beatmap combo from the same folder as the executable.
 
 **analyze all replays in folder** Argument "-ia". A FullAnalysis.osi file will be created. Open it with notepad or another editor.
