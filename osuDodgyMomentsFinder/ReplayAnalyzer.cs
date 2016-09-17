@@ -248,6 +248,35 @@ namespace osuDodgyMomentsFinder
             return calcPressIntervals().Average();
         }
 
+        public List<ReplayFrame> checkTappingConsistency()
+        {
+            List<ReplayFrame> times = new List<ReplayFrame>();
+
+            for (int i = 0; i < hits.Count - 1; ++i)
+            {
+                HitFrame hit1 = hits[i], hit2 = hits[i + 1];
+
+                if (hit2.note.StartTime - hit1.note.StartTime <= 100 && hit1.frame.Keys == hit2.frame.Keys)
+                    times.Add(hit1.frame);
+            }
+
+            return times;
+        }
+
+        public List<ReplayFrame> findCursorTeleports()
+        {
+            List<ReplayFrame> times = new List<ReplayFrame>();
+
+            for(int i = 0; i < replay.ReplayFrames.Count - 1; ++i)
+            {
+                ReplayFrame frame1 = replay.ReplayFrames[i], frame2 = replay.ReplayFrames[i + 1];
+
+                if (frame2.travelledDistance - frame1.travelledDistance > 20)
+                    times.Add(frame1);
+            }
+
+            return times;
+        }
 
         public bool isCheating()
         {
@@ -443,6 +472,7 @@ namespace osuDodgyMomentsFinder
             selectBreaks();
             associateHits();
             calculateCursorSpeed();
+            findCursorTeleports();
         }
 
         public double findBestPixelHit()
