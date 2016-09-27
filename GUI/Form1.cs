@@ -9,6 +9,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -16,12 +17,15 @@ namespace GUI
 {
     public partial class Form1 : Form
     {
-        List<Replay> replays;
-        //string[] replayFilePath;
-        string osuFilePath;
-        Dictionary<string, string> mapsDB;
+        private List<Replay> replays;
+        private Dictionary<string, string> mapsDB;
 
-        MainControlFrame settings;
+        private MainControlFrame settings;
+        private bool cacheLabel = false;
+        private string cachedLabelText = "";
+
+        private string osuFilePath = "";
+        private string osuReplaysPath = "";
 
         public Form1()
         {
@@ -47,21 +51,30 @@ namespace GUI
             if (replayFileDialogue.ShowDialog() == DialogResult.OK)
             {
                 replays = new List<Replay>();
-                string log = "Loaded replays:\n";
+                bool clean = true;
+                string log = "";
                 foreach(var replayFile in replayFileDialogue.FileNames)
                 {
                     try
                     {
                         replays.Add(new Replay(replayFile, true));
-                        log += replayFile + "\n";
+                        //log += replayFile + "\n";
                     }
                     catch (Exception exception)
                     {
+                        if (clean)
+                            log = "Some of the replays were not read:\n";
                         log += "Failed to process " + replayFile + " (" + exception.Message + ")\n";
+                        clean = false;
                     }
                 }
+                if (clean)
+                    log = "All replays were read successfully!";
                 MessageBox.Show(log);
             }
+
+            if (replayFileDialogue.FileNames.Length > 0)
+                this.osuReplaysPath = replayFileDialogue.FileNames[0];
 
         }
 
@@ -116,9 +129,12 @@ namespace GUI
         {
             Beatmap map = null;
             string res = "";
+            currentTaskLabel.Text = "Analyzing replays...";
+            currentTaskLabel.Refresh();
             for (int i = 0; i < replays.Count; ++i)
             {
                 progressBar1.Value = (int)((100.0 / replays.Count) * i);
+                progressBar1.Refresh();
                 Replay replay = replays[i];
 
                 map = findBeatmapInOsuDB(replay);
@@ -129,25 +145,36 @@ namespace GUI
                     res += replay.Filename + " does not correspond to any known map\n";
             }
             progressBar1.Value = 100;
-            saveResult(res);
+            progressBar1.Refresh();
+            currentTaskLabel.Text = "Finished analyzing replays.";
+            currentTaskLabel.Refresh();
+            if (replays.Count == 0)
+            {
+                MessageBox.Show("Error! No replays selected.");
+            }
+            else
+            {
+                saveResult(res);
+            }
         }
 
         private void parseOsuDB(string osuDbPath, string songsFolder)
         {
             var osuDbP = new OsuDbAPI.OsuDbFile(osuDbPath);
             currentTaskLabel.Text = "Processing beatmaps from osuDB...";
+            currentTaskLabel.Refresh();
             var dict = new Dictionary<string, string>();
             for (int i = 0; i < osuDbP.Beatmaps.Count; ++i)
             {
                 progressBar1.Value = (int)((100.0 / osuDbP.Beatmaps.Count) * i);
                 OsuDbAPI.Beatmap dbBeatmap = osuDbP.Beatmaps[i];
                 string beatmapPath = songsFolder + "\\" + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
-                //Beatmap map = new Beatmap(beatmapPath);
                 dict.Add(dbBeatmap.Hash, beatmapPath);
             }
             progressBar1.Value = 100;
             mapsDB = dict;
-            currentTaskLabel.Text = "Finished processing beatmaps from osuDB...";
+            currentTaskLabel.Text = "Finished processing beatmaps from osuDB.";
+            currentTaskLabel.Refresh();
         }
 
         private void saveResult(string res)
@@ -203,35 +230,49 @@ namespace GUI
         private void analyzeReplaysButton_Click(object sender, EventArgs e)
         {
             string res = "";
-
             var pairs = new Dictionary<Beatmap, Replay>();
 
-            DirectoryInfo directory = new DirectoryInfo(settings.pathReplays);
-            FileInfo[] files = directory.GetFiles();
+            currentTaskLabel.Text = "Analyzing replays in folder...";
+            currentTaskLabel.Refresh();
 
-            var replaysFiles = new List<string>();
-            foreach (FileInfo file in files)
+            try
             {
-                if (file.Extension == ".osr")
+                DirectoryInfo directory = new DirectoryInfo(settings.pathReplays);
+                FileInfo[] files = directory.GetFiles();
+
+                var replaysFiles = new List<string>();
+                foreach (FileInfo file in files)
                 {
-                    replaysFiles.Add(file.FullName);
+                    if (file.Extension == ".osr")
+                    {
+                        replaysFiles.Add(file.FullName);
+                    }
+                }
+
+                progressBar1.Value = 0;
+                var replays = new List<Replay>();
+                for (int i = 0; i < replaysFiles.Count; ++i)
+                {
+                    string path = replaysFiles[i];
+
+                    progressBar1.Value = (int)((100.0 / replaysFiles.Count) * i);
+                    Replay replay = new Replay(path, true);
+                    Beatmap map = findBeatmapInOsuDB(replay);
+                    res += osuDodgyMomentsFinder.Program.ReplayAnalyzing(map, replay).ToString();
+
                 }
             }
-
-            progressBar1.Value = 0;
-            var replays = new List<Replay>();
-            for(int i = 0; i < replaysFiles.Count; ++i)
+            catch (Exception exp)
             {
-                string path = replaysFiles[i];
-
-                progressBar1.Value = (int)((100.0 / replaysFiles.Count) * i);
-                Replay replay = new Replay(path, true);
-                Beatmap map = findBeatmapInOsuDB(replay);
-                res += osuDodgyMomentsFinder.Program.ReplayAnalyzing(map, replay).ToString();
-                
+                MessageBox.Show(exp.ToString());
             }
-            progressBar1.Value = 100;
-            saveResult(res);
+            finally
+            {
+                progressBar1.Value = 100;
+                currentTaskLabel.Text = "Finished analyzing replays in folder...";
+                currentTaskLabel.Refresh();
+                saveResult(res);
+            }
         }
 
         private void testButton_Click(object sender, EventArgs e)
@@ -257,6 +298,8 @@ namespace GUI
         private string AvsBReplaysCompare(List<Replay> replaysA, List<Replay> replaysB)
         {
             string res = "";
+            currentTaskLabel.Text = "Comparing replays...";
+            currentTaskLabel.Refresh();
             progressBar1.Value = 0;
             int count = replaysA.Count * replaysB.Count;
             for (int i = 0; i < replaysA.Count; ++i)
@@ -272,6 +315,8 @@ namespace GUI
                 }
             }
             progressBar1.Value = 100;
+            currentTaskLabel.Text = "Finished comparing replays.";
+            currentTaskLabel.Refresh();
 
             return res;
         }
@@ -279,6 +324,8 @@ namespace GUI
         private string AllVSReplaysCompare(List<Replay> replays)
         {
             string res = "";
+            currentTaskLabel.Text = "Comparing replays...";
+            currentTaskLabel.Refresh();
             progressBar1.Value = 0;
             int count = replays.Count * (replays.Count - 1) / 2;
             for (int i = 0; i < replays.Count; ++i)
@@ -294,6 +341,8 @@ namespace GUI
                 }
             }
             progressBar1.Value = 100;
+            currentTaskLabel.Text = "Finished comparing replays.";
+            currentTaskLabel.Refresh();
 
             return res;
         }
@@ -321,6 +370,8 @@ namespace GUI
                 }
             }
 
+            currentTaskLabel.Text = "Comparing replays in folder...";
+            currentTaskLabel.Refresh();
             progressBar1.Value = 0;
             var replays = new List<Replay>();
             for (int i = 0; i < replaysFiles.Count; ++i)
@@ -337,6 +388,9 @@ namespace GUI
                     res += "Failed to process " + path + " (" + exception.Message + ")\n";
                 }
             }
+            progressBar1.Value = 100;
+            currentTaskLabel.Text = "Finished comparing replays in folder...";
+            currentTaskLabel.Refresh();
 
             saveResult(res + AllVSReplaysCompare(replays));
         }
@@ -377,6 +431,62 @@ namespace GUI
             }
 
             saveResult(res + AvsBReplaysCompare(this.replays, replays));
+        }
+
+        private void chooseReplaysFolderButton_MouseHover(object sender, EventArgs e)
+        {
+            saveLabel();
+            currentTaskLabel.Text = this.settings.pathReplays.Length > 0 ? this.settings.pathReplays : "Not selected";
+        }
+
+        private void chooseReplayButton_MouseHover(object sender, EventArgs e)
+        {
+            saveLabel();
+            currentTaskLabel.Text = this.osuReplaysPath.Length > 0 ? this.osuReplaysPath : "Not selected";
+        }
+
+        private void chooseMapButton_MouseHover(object sender, EventArgs e)
+        {
+            saveLabel();
+            currentTaskLabel.Text = this.osuFilePath.Length > 0 ? this.osuFilePath : "Not selected";
+        }
+
+        private void openOsuDBButton_MouseHover(object sender, EventArgs e)
+        {
+            saveLabel();
+            currentTaskLabel.Text = this.settings.pathOsuDB.Length > 0 ? this.settings.pathOsuDB : "Not selected";
+        }
+
+        private void saveLabel()
+        {
+            cacheLabel = true;
+            cachedLabelText = currentTaskLabel.Text;
+        }
+
+        private void restoreLabel()
+        {
+            if (cacheLabel)
+                currentTaskLabel.Text = cachedLabelText;
+        }
+
+        private void chooseReplayButton_MouseLeave(object sender, EventArgs e)
+        {
+            restoreLabel();
+        }
+
+        private void chooseReplaysFolderButton_MouseLeave(object sender, EventArgs e)
+        {
+            restoreLabel();
+        }
+
+        private void chooseMapButton_MouseLeave(object sender, EventArgs e)
+        {
+            restoreLabel();
+        }
+
+        private void openOsuDBButton_MouseLeave(object sender, EventArgs e)
+        {
+            restoreLabel();
         }
     }
 }
