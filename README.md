@@ -1,8 +1,5 @@
 # osu!ReplayAnalyzer
 
-### Build status
-[![Build status](https://travis-ci.org/firedigger/osuReplayAnalyzer.svg?branch=master)](https://travis-ci.org/firedigger/osuReplayAnalyzer)
-
 About
 --
 This is a program that works as a client-sided 'anti-cheat' for the game [osu!](https://osu.ppy.sh/).  
