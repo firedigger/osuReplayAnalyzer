@@ -1,8 +1,11 @@
 # osu!ReplayAnalyzer
 
+<<<<<<< HEAD
 ### Build status
 [![Build status](https://travis-ci.org/firedigger/osuReplayAnalyzer.svg?branch=master)](https://travis-ci.org/firedigger/osuReplayAnalyzer)
 
+=======
+>>>>>>> ddc8462469764273c2a6c04b365f5c768eb5b94b
 About
 --
 This is a program that works as a client-sided 'anti-cheat' for the game [osu!](https://osu.ppy.sh/).  
@@ -39,7 +42,11 @@ ___
 
 ### GUI
 ___
+<<<<<<< HEAD
 ![Screenshot of the osu!ReplayAnalyzer GUI](https://i.imgur.com/aVGMyjz.png)
 
 ### Note:
 * A re-design of the GUI in WPF would be appreciated, hit us up with [a pull request](https://github.com/firedigger/osuReplayAnalyzer/pulls) if you're interested!
+=======
+![Screenshot of the osu!ReplayAnalyzer GUI](https://i.imgur.com/cIrzSG0.png)
+>>>>>>> ddc8462469764273c2a6c04b365f5c768eb5b94b

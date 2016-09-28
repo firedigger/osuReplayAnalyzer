@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "osuDodgyMomentsFinder", "osuDodgyMomentsFinder\osuDodgyMomentsFinder.csproj", "{78BA9DB5-35BA-41BA-87F4-E69DDCD266B0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUI", "GUI\GUI.csproj", "{64E82D43-B9FF-412C-B658-CB861C13C85C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUI", "WPF_GUI\GUI.csproj", "{1167CBE5-8D31-4305-BEB5-FD810D72858B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{78BA9DB5-35BA-41BA-87F4-E69DDCD266B0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{78BA9DB5-35BA-41BA-87F4-E69DDCD266B0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{78BA9DB5-35BA-41BA-87F4-E69DDCD266B0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{64E82D43-B9FF-412C-B658-CB861C13C85C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{64E82D43-B9FF-412C-B658-CB861C13C85C}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{64E82D43-B9FF-412C-B658-CB861C13C85C}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{64E82D43-B9FF-412C-B658-CB861C13C85C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1167CBE5-8D31-4305-BEB5-FD810D72858B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1167CBE5-8D31-4305-BEB5-FD810D72858B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1167CBE5-8D31-4305-BEB5-FD810D72858B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1167CBE5-8D31-4305-BEB5-FD810D72858B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
