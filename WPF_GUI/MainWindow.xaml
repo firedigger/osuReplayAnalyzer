@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:WPF_GUI"
         mc:Ignorable="d"
 		Closing="Window_Closing"
-        Title="osu!ReplayAnalyzer" Height="255" Width="480.98" Background="#FF252525" ResizeMode="CanMinimize" Icon="Resources/osu!.ico">
+        Title="osu!ReplayAnalyzer" Height="255" Width="480.98" Background="#FF252525" ResizeMode="CanMinimize">
 	<Grid Margin="0,0,-6,0">
 		<CheckBox x:Name="checkBox_AlertOutput" Content="Alert output" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,87,0,0" Background="White" Foreground="White" Height="15" Width="84" IsChecked="True"/>
 		<CheckBox x:Name="checkBox_SaveToFile" Content="Save to file" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,116,0,0" Background="White" Foreground="White" Height="15" Width="78"/>

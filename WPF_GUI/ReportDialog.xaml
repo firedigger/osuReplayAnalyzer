@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:WPF_GUI"
         mc:Ignorable="d"
-        Title="Results" Height="418.571" Width="778.412" ResizeMode="CanMinimize" Icon="Resources/osu!.ico">
+        Title="Results" Height="418.571" Width="778.412" ResizeMode="CanMinimize">
 	<Grid>
 		<TextBox x:Name="textBox_Results" TextWrapping="Wrap"/>
 	</Grid>
