@@ -29,16 +29,16 @@ namespace WPF_GUI
 		{
 			listReplays = new List<Replay>();
 			dMapsDatabase = new Dictionary<string, string>();
-			settings = new MainControlFrame();
-
-			if(File.Exists(settings.pathSettings))
-			{
-				settings.LoadSettings();
-			}
+            settings = new MainControlFrame();
 
 			InitializeComponent();
 
-			if(!string.IsNullOrEmpty(settings.pathSongs) && !string.IsNullOrEmpty(settings.pathOsuDB))
+            if (File.Exists(settings.pathSettings))
+            {
+                settings.LoadSettings();
+            }
+
+            if (!string.IsNullOrEmpty(settings.pathSongs) && !string.IsNullOrEmpty(settings.pathOsuDB))
 			{
 				ParseDatabaseFile(settings.pathOsuDB, settings.pathSongs);
 			}
@@ -150,6 +150,7 @@ namespace WPF_GUI
 			if(listReplays.Count > 0)
 			{
 				int iQueue = 0;
+                bool found = false;
 
 				foreach(Replay replay in listReplays)
 				{
@@ -159,6 +160,7 @@ namespace WPF_GUI
 
 					if(beatMap != null)
 					{
+                        found = true;
 						sb.AppendLine(Program.ReplayAnalyzing(beatMap, replay).ToString());
 					}
 
@@ -167,6 +169,11 @@ namespace WPF_GUI
 						sb.AppendLine(string.Format("{0} does not correspond to any known map", replay.Filename));
 					}
 				}
+
+                if (!found)
+                {
+                    sb.AppendLine("You have probably not imported the map(s). Make sure to load your osu DB using the button.");
+                }
 
 				progressBar_Analyzing.Value = 100.0;
 
