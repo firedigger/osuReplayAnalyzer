@@ -300,13 +300,6 @@ namespace osuDodgyMomentsFinder
             return res.Remove(res.Length - 1);
         }
 
-        public bool isCheating()
-        {
-            if(this.replay.PlayerName == "Axarious" || this.replay.PlayerName == "Bikko")
-                return true;
-            return false;
-        }
-
         public double calculateAverageFrameTimeDiff()
         {
             return times.ConvertAll(x => x.TimeDiff).Average();

@@ -31,17 +31,25 @@ namespace WPF_GUI
 			dMapsDatabase = new Dictionary<string, string>();
             settings = new MainControlFrame();
 
-			InitializeComponent();
-
-            if (File.Exists(settings.pathSettings))
+            try
             {
-                settings.LoadSettings();
+                InitializeComponent();
+
+                if (File.Exists(settings.pathSettings))
+                {
+                    settings.LoadSettings();
+                }
+
+            }
+            catch (Exception exp)
+            {
+                MessageBox.Show("Error!\n" + exp.ToString());
             }
 
             if (!string.IsNullOrEmpty(settings.pathSongs) && !string.IsNullOrEmpty(settings.pathOsuDB))
-			{
-				ParseDatabaseFile(settings.pathOsuDB, settings.pathSongs);
-			}
+            {
+                ParseDatabaseFile(settings.pathOsuDB, settings.pathSongs);
+            }
 		}
 
 		private void button_ChooseReplays_Click(object sender, RoutedEventArgs e)
@@ -190,28 +198,38 @@ namespace WPF_GUI
 
 		private void ParseDatabaseFile(string databasePath, string songsFolder)
 		{
-			osuDatabase.OsuDbFile osuDatabase = new osuDatabase.OsuDbFile(databasePath);
+            try
+            {
+                osuDatabase.OsuDbFile osuDatabase = new osuDatabase.OsuDbFile(databasePath);
 
-			labelTask.Content = "Processing beatmaps from database...";
 
-			Dictionary<string, string> dTempDatabase = new Dictionary<string, string>();
+                labelTask.Content = "Processing beatmaps from database...";
 
-			int iQueue = 0;
+                Dictionary<string, string> dTempDatabase = new Dictionary<string, string>();
 
-			foreach(osuDatabase.Beatmap beatMap in osuDatabase.Beatmaps)
-			{
-				progressBar_Analyzing.Value = (100.0 / osuDatabase.Beatmaps.Count) * iQueue++;
+                int iQueue = 0;
 
-				osuDatabase.Beatmap dbBeatmap = beatMap;
+                foreach (osuDatabase.Beatmap beatMap in osuDatabase.Beatmaps)
+                {
+                    progressBar_Analyzing.Value = (100.0 / osuDatabase.Beatmaps.Count) * iQueue++;
 
-				string beatmapPath = string.Format("{0}\\{1}\\{2}", songsFolder, dbBeatmap.FolderName, dbBeatmap.OsuFile);
-				dTempDatabase.Add(dbBeatmap.Hash, beatmapPath);
-			}
+                    osuDatabase.Beatmap dbBeatmap = beatMap;
 
-			progressBar_Analyzing.Value = 100.0;
-			dMapsDatabase = dTempDatabase;
+                    if (dbBeatmap != null && !string.IsNullOrEmpty(dbBeatmap.Hash))
+                    {
+                        string beatmapPath = string.Format("{0}\\{1}\\{2}", songsFolder, dbBeatmap.FolderName, dbBeatmap.OsuFile);
+                        dTempDatabase.Add(dbBeatmap.Hash, beatmapPath);
+                    }
+                }
 
-			labelTask.Content = "Finished processing beatmaps from osuDB.";
+                progressBar_Analyzing.Value = 100.0;
+                dMapsDatabase = dTempDatabase;
+
+                labelTask.Content = "Finished processing beatmaps from osuDB.";
+            } catch (Exception exp)
+            {
+                MessageBox.Show("Error reading osuDB \n" + exp.ToString());
+            }
 		}
 
 		private void SaveResult(StringBuilder sb)
