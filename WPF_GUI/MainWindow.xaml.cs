@@ -218,7 +218,8 @@ namespace WPF_GUI
                     if (dbBeatmap != null && !string.IsNullOrEmpty(dbBeatmap.Hash))
                     {
                         string beatmapPath = string.Format("{0}\\{1}\\{2}", songsFolder, dbBeatmap.FolderName, dbBeatmap.OsuFile);
-                        dTempDatabase.Add(dbBeatmap.Hash, beatmapPath);
+                        if(!dTempDatabase.ContainsKey(dbBeatmap.Hash))
+                                dTempDatabase.Add(dbBeatmap.Hash, beatmapPath);
                     }
                 }
 
