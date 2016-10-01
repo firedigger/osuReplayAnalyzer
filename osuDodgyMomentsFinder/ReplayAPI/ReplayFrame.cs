@@ -17,5 +17,11 @@ namespace ReplayAPI
         public double travelledDistanceDiff { get; set; }
         public double speed { get; set; }
         public double acceleration { get; set; }
+
+        
+        public override string ToString()
+        {
+            return string.Format("{0}({1}): ({2},{3}) {5} {6}", Time, TimeDiff, X, Y, Keys, travelledDistanceDiff);
+        }
     }
 }

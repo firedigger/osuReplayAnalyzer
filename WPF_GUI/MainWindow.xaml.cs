@@ -9,6 +9,7 @@ using System.Text;
 using System.Windows;
 using WinForms = System.Windows.Forms;
 using osuDatabase = OsuDbAPI;
+using System.Diagnostics;
 
 namespace WPF_GUI
 {
@@ -23,7 +24,7 @@ namespace WPF_GUI
 
 		private string sCachedLabelText = string.Empty;
 		private string osuFilePath = string.Empty;
-		private string osuReplaysPath = string.Empty;
+		//private string osuReplaysPath = string.Empty;
 
 		public MainWindow()
 		{
@@ -40,15 +41,14 @@ namespace WPF_GUI
                     settings.LoadSettings();
                 }
 
+                if (!string.IsNullOrEmpty(settings.pathSongs) && !string.IsNullOrEmpty(settings.pathOsuDB))
+                {
+                    ParseDatabaseFile(settings.pathOsuDB, settings.pathSongs);
+                }
             }
             catch (Exception exp)
             {
                 MessageBox.Show("Error!\n" + exp.ToString());
-            }
-
-            if (!string.IsNullOrEmpty(settings.pathSongs) && !string.IsNullOrEmpty(settings.pathOsuDB))
-            {
-                ParseDatabaseFile(settings.pathOsuDB, settings.pathSongs);
             }
 		}
 
@@ -88,12 +88,14 @@ namespace WPF_GUI
 				if(!bErrors)
 				{
 					log = "All replays were successfully read!";
-				}
+                    if (replayFileDialog.FileNames.Length > 0)
+                    {
+                        string directoryName = Path.GetDirectoryName(replayFileDialog.FileNames[0]);
+                        if (string.IsNullOrEmpty(settings.pathReplays))
+                            settings.pathReplays = directoryName;
 
-				else if(replayFileDialog.FileNames.Length > 0)
-				{
-					osuReplaysPath = replayFileDialog.FileNames[0];
-				}
+                    }
+                }
 
 				MessageBox.Show(log);
 			}
@@ -187,7 +189,6 @@ namespace WPF_GUI
 
 				SaveResult(sb);
 			}
-
 			else
 			{
 				MessageBox.Show("Error! No replays selected.");
@@ -509,5 +510,99 @@ namespace WPF_GUI
 
 			SaveResult(new StringBuilder(sb.ToString() + AvsBReplaysCompare(listReplays, replays).ToString()));
 		}
-	}
+
+        private void rawData_button_Click(object sender, RoutedEventArgs e)
+        {
+            labelTask.Content = "Converting replays...";
+
+            if (listReplays.Count > 0)
+            {
+                int iQueue = 0;
+
+                foreach (Replay replay in listReplays)
+                {
+                    progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
+                    File.WriteAllText(replay.Filename + ".RAW.txt", replay.SaveText());
+                }
+
+                progressBar_Analyzing.Value = 100.0;
+
+                //SaveResult(sb);
+            }
+            else
+            {
+                MessageBox.Show("Error! No replays selected.");
+            }
+
+            labelTask.Content = "Finished converting replays.";
+        }
+
+        private void openReplaysFolder_button_Click(object sender, RoutedEventArgs e)
+        {
+            Process process = new Process();
+
+            process.StartInfo.UseShellExecute = true;
+
+            process.StartInfo.FileName = "explorer";
+
+            if (!string.IsNullOrEmpty(settings.pathReplays))
+                process.StartInfo.Arguments = settings.pathReplays;
+
+            process.Start();
+        }
+
+        private void rawFeatures_button_Click(object sender, RoutedEventArgs e)
+        {
+            Beatmap beatMap = null;
+            StringBuilder sb = new StringBuilder();
+
+            labelTask.Content = "Collecting data from replays...";
+
+            if (listReplays.Count > 0)
+            {
+                int iQueue = 0;
+                bool found = false;
+
+                foreach (Replay replay in listReplays)
+                {
+                    progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
+
+                    beatMap = FindBeatmapInDatabase(replay);
+
+                    if (beatMap != null)
+                    {
+                        found = true;
+                        sb.AppendLine(Program.ReplayDataCollecting(beatMap, replay).ToString());
+                    }
+
+                    else
+                    {
+                        sb.AppendLine(string.Format("{0} does not correspond to any known map", replay.Filename));
+                    }
+                }
+
+                if (!found)
+                {
+                    sb.AppendLine("You have probably not imported the map(s). Make sure to load your osu DB using the button.");
+                }
+
+                progressBar_Analyzing.Value = 100.0;
+
+                SaveFileDialog saveReportDialog = new SaveFileDialog();
+                saveReportDialog.FileName = "Data " + DateTime.Now.ToString("MMMM dd, yyyy H-mm-ss") + ".txt";
+                saveReportDialog.Filter = "All Files|*.*;";
+
+                if (saveReportDialog.ShowDialog() ?? true)
+                {
+                    File.WriteAllText(saveReportDialog.FileName, sb.ToString());
+                }
+            }
+            else
+            {
+                MessageBox.Show("Error! No replays selected.");
+            }
+
+            labelTask.Content = "Finished collecting data from replays.";
+        }
+    }
 }

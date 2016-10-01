@@ -48,14 +48,24 @@ namespace osuDodgyMomentsFinder
         public void LoadSettings()
         {
             FileStream stream = new FileStream(pathSettings, FileMode.Open);
-            JavaProperties settings = new JavaProperties();
-            settings.Load(stream);
-            pathSongs = settings.GetProperty("pathSongs");
-            pathReplays = settings.GetProperty("pathReplays");
-            pathOsuDB = settings.GetProperty("pathOsuDB");
-            Console.WriteLine(pathOsuDB);
-            osuDbP = new OsuDbAPI.OsuDbFile(pathOsuDB);
-            stream.Close();
+            try
+            {
+                JavaProperties settings = new JavaProperties();
+                settings.Load(stream);
+                pathSongs = settings.GetProperty("pathSongs");
+                pathReplays = settings.GetProperty("pathReplays");
+                pathOsuDB = settings.GetProperty("pathOsuDB");
+                Console.WriteLine(pathOsuDB);
+                osuDbP = new OsuDbAPI.OsuDbFile(pathOsuDB);
+            }
+            catch (Exception exp)
+            {
+                Console.WriteLine("Error parsing settings:\n" + exp.ToString());
+            }
+            finally
+            {
+                stream.Close();
+            }
         }
 
         public void saveSettings()
@@ -68,7 +78,6 @@ namespace osuDodgyMomentsFinder
             JavaPropertyWriter writer = new JavaPropertyWriter(settings);
             writer.Write(stream, "osuReplayAnalyzer settings");
             stream.Close();
-            //File.WriteAllText(pathSettings,settings.ToString());
         }
     }
 }

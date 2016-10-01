@@ -85,6 +85,20 @@ namespace osuDodgyMomentsFinder
             return result;
         }
 
+        public static StringBuilder ReplayDataCollecting(Beatmap beatmap, Replay replay)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine("BEATMAP: " + beatmap.ToString());
+            sb.AppendLine("REPLAY: " + replay.ToString());
+            sb.AppendLine();
+
+            ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
+            sb.AppendLine(analyzer.PixelPerfectRawData().ToString());
+            //sb.AppendLine(analyzer.PixelPerfectRawData().ToString());
+
+            return sb;
+        }
 
         public static StringBuilder ReplayAnalyzing(Beatmap beatmap, Replay replay)
         {
@@ -165,10 +179,10 @@ namespace osuDodgyMomentsFinder
                 if(oneFile)
                     res += result;
                 else
-                    File.WriteAllText(pair.Value.ToString() + ".osi", result);
+                    File.WriteAllText(pair.Value.ToString() + ".txt", result);
             }
             if(oneFile)
-                File.WriteAllText("FullAnalysis.osi", res);
+                File.WriteAllText("Report " + DateTime.Now.ToString("MMMM dd, yyyy H-mm-ss") + ".txt", res);
 
         }
 
@@ -216,13 +230,13 @@ namespace osuDodgyMomentsFinder
                     @"# Do not change the order of the settings",
                     @"",
                     @"# Path to osu!.db",
-                    @"C:\\osu!\\osu!.db",
+                    @"pathOsuDB=C:\\osu!\\osu!.db",
                     @"",
                     @"# Path to your osu! song folder",
-                    @"C:\\osu!\\songs\\",
+                    @"pathSongs=C:\\osu!\\songs\\",
                     @"",
                     @"# Path to a replay folder",
-                    @"C:\\osu!\\replays\\"
+                    @"pathReplays=C:\\osu!\\replays\\"
                 };
                 File.WriteAllLines(MainControlFrame.Instance.pathSettings, settings);
                 Console.WriteLine("A settings file has been created for you to link to your songs folder.");
@@ -233,9 +247,10 @@ namespace osuDodgyMomentsFinder
             if(args.Length == 0)
             {
                 Console.WriteLine("Welcome the firedigger's replay analyzer. Use one of 3 options");
-                Console.WriteLine("-i for getting info about a certain replay");
+                Console.WriteLine("-i (path to replay) for getting info about a certain replay");
+                Console.WriteLine("-ia for getting info about all replays in the current folder");
                 Console.WriteLine("-c for comparing all the replays in the current folder against each other");
-                Console.WriteLine("-cr for comparing the replays from command line args");
+                Console.WriteLine("-cr [paths to replays] for comparing the replays from command line args");
                 Console.ReadKey();
                 return;
             }
@@ -245,8 +260,6 @@ namespace osuDodgyMomentsFinder
             }
             if(args[0] == "-i")
             {
-                //if (args.Length == 1)
-                //    args = UIUtils.getArgsFromUser();
                 Console.WriteLine(ReplayAnalyzing(new Replay(args[1], true)));
             }
             if(args[0] == "-c")

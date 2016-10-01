@@ -270,7 +270,7 @@ namespace osuDodgyMomentsFinder
                     ++spinnerIndex;
                 }
 
-                if (isTeleport(prev, frame) && (spinnerIndex >= spinners.Count || frame.Time < spinners[spinnerIndex].StartTime) && prev.travelledDistanceDiff > 0)
+                if (isTeleport(prev, frame) && (spinnerIndex >= spinners.Count || frame.Time < spinners[spinnerIndex].StartTime))
                 {
                     times.Add(frame);
                 }
@@ -281,12 +281,8 @@ namespace osuDodgyMomentsFinder
 
         private bool isTeleport(ReplayFrame prev, ReplayFrame frame)
         {
-            if (double.IsInfinity(frame.speed))
+            if (frame.travelledDistanceDiff >= 110 && (double.IsInfinity(frame.speed) || frame.speed >= 5))
                 return true;
-
-            if (frame.speed >= 5 && frame.travelledDistanceDiff >= 110)
-                return true;
-
             return false;
         }
 
@@ -522,6 +518,19 @@ namespace osuDodgyMomentsFinder
             return result;
         }
 
+        private List<double> findAllPixelHits()
+        {
+            var pixelPerfectHits = new List<double>();
+
+            foreach (var pair in hits)
+            {
+                double factor = pair.perfectness;
+                pixelPerfectHits.Add(factor);
+            }
+
+            return pixelPerfectHits;
+        }
+
 
         public List<KeyValuePair<double, HitFrame>> findSortedPixelPerfectHits(int maxSize, double threshold)
         {
@@ -556,6 +565,10 @@ namespace osuDodgyMomentsFinder
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine("GENERIC INFO");
+            if (miss.Count != replay.CountMiss)
+            {
+                sb.AppendLine("WARNING! The number of misses is not consistent with the replay: " + miss.Count + " VS. " + replay.CountMiss + " (notepad user or missed on spinners or BUG in the code)");
+            }
             sb.AppendLine("Unstable rate = " + unstableRate());
 
             if(unstableRate() < 47.5)
@@ -582,6 +595,17 @@ namespace osuDodgyMomentsFinder
 
             sb.AppendLine("Average Key press time interval = " + averagePressIntervals() + "ms");
 
+            return sb;
+        }
+
+        public StringBuilder PixelPerfectRawData()
+        {
+            StringBuilder sb = new StringBuilder();
+            var pixelPerfectHits = findAllPixelHits();
+            foreach (var hit in pixelPerfectHits)
+            {
+                sb.Append(hit).Append(',');
+            }
             return sb;
         }
 
@@ -664,7 +688,6 @@ namespace osuDodgyMomentsFinder
             }
             return sb;
         }
-
 
     }
 }

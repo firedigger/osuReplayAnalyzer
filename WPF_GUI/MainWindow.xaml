@@ -21,5 +21,8 @@
 		<Button x:Name="button_CompareFolder" Content="Compare All&#xD;&#xA;From Folder" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="341,57,0,0" Height="36" Click="button_CompareFolder_Click"/>
 		<Button x:Name="button_CompareSelectedAgainstFolder" Content="Compare Selected&#xD;&#xA;Against Folder" HorizontalAlignment="Left"  VerticalAlignment="Top"  Width="103" Margin="341,98,0,0" Height="38" Click="button_CompareSelectedAgainstFolder_Click"/>
 		<Label x:Name="labelTask" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,153,0,0" Foreground="White"/>
-	</Grid>
+        <Button x:Name="rawData_button" Content="Raw replay Data" HorizontalAlignment="Left" Margin="120,78,0,0" VerticalAlignment="Top" Width="103" Height="20" Click="rawData_button_Click"/>
+        <Button x:Name="openReplaysFolder_button" Content="Open replays folder" HorizontalAlignment="Left" Margin="120,111,0,0" VerticalAlignment="Top" Width="103" Height="20" FontSize="11" Click="openReplaysFolder_button_Click"/>
+        <Button x:Name="rawFeatures_button" Content="Raw features data" HorizontalAlignment="Left" Margin="228,78,0,0" VerticalAlignment="Top" Width="103" Height="20" FontSize="11" Click="rawFeatures_button_Click"/>
+    </Grid>
 </Window>
