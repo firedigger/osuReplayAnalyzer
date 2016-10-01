@@ -9,6 +9,7 @@ namespace osuDodgyMomentsFinder
 {
     public class Program
     {
+        private static MainControlFrame settings = new MainControlFrame();
 
         public static Dictionary<string, Beatmap> processOsuDB(OsuDbAPI.OsuDbFile osuDB, string songsFolder)
         {
@@ -44,7 +45,7 @@ namespace osuDodgyMomentsFinder
             }
             var replays = replaysFiles.ConvertAll((path) => new Replay(path, true));
 
-            var osuDBmaps = MainControlFrame.Instance.osuDbP.Beatmaps;
+            var osuDBmaps = settings.osuDbP.Beatmaps;
 
             var maps = mapsFiles.ConvertAll((path) => new Beatmap(path));
 
@@ -62,7 +63,7 @@ namespace osuDodgyMomentsFinder
             {
                 foreach(OsuDbAPI.Beatmap dbBeatmap in osuDBmaps)
                 {
-                    string beatmapPath = MainControlFrame.Instance.pathSongs + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
+                    string beatmapPath = settings.pathSongs + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
                     Beatmap map = new Beatmap(beatmapPath);
                     if(!dict.ContainsKey(map.BeatmapHash))
                         dict.Add(map.BeatmapHash, map);
@@ -188,14 +189,14 @@ namespace osuDodgyMomentsFinder
 
         public static string ReplayAnalyzing(Replay replay)
         {
-            var maps = MainControlFrame.Instance.osuDbP.Beatmaps;
+            var maps = settings.osuDbP.Beatmaps;
 
             string beatmapPath = "";
             foreach(OsuDbAPI.Beatmap dbBeatmap in maps)
             {
                 if(dbBeatmap.Hash == replay.MapHash)
                 {
-                    beatmapPath = MainControlFrame.Instance.pathSongs + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
+                    beatmapPath = settings.pathSongs + dbBeatmap.FolderName + "\\" + dbBeatmap.OsuFile;
                     break;
                 }
             }
@@ -218,16 +219,16 @@ namespace osuDodgyMomentsFinder
 
         public static void Main(string[] args)
         {
-            if(File.Exists(MainControlFrame.Instance.pathSettings))
+            if(File.Exists(settings.pathSettings))
             {
-                MainControlFrame.Instance.LoadSettings();
+                Console.WriteLine(settings.pathSettings + " found. Parsing settings.");
+                settings.LoadSettings();
             }
             else
             {
-                string[] settings = new string[]
+                string[] settings_help = new string[]
                 {
                     @"# Lines starting with a # are ignored",
-                    @"# Do not change the order of the settings",
                     @"",
                     @"# Path to osu!.db",
                     @"pathOsuDB=C:\\osu!\\osu!.db",
@@ -238,7 +239,7 @@ namespace osuDodgyMomentsFinder
                     @"# Path to a replay folder",
                     @"pathReplays=C:\\osu!\\replays\\"
                 };
-                File.WriteAllLines(MainControlFrame.Instance.pathSettings, settings);
+                File.WriteAllLines(settings.pathSettings, settings_help);
                 Console.WriteLine("A settings file has been created for you to link to your songs folder.");
                 return;
             }

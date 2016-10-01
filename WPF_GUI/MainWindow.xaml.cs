@@ -131,7 +131,7 @@ namespace WPF_GUI
 				beatMap = new Beatmap(osuFilePath);
 			}
 
-			if(beatMap != null && replay.MapHash.Equals(beatMap.BeatmapHash))
+			if(!ReferenceEquals(beatMap,null) && replay.MapHash.Equals(beatMap.BeatmapHash))
 			{
 				return beatMap;
 			}
@@ -168,7 +168,7 @@ namespace WPF_GUI
 
 					beatMap = FindBeatmapInDatabase(replay);
 
-					if(beatMap != null)
+					if(!ReferenceEquals(beatMap,null))
 					{
                         found = true;
 						sb.AppendLine(Program.ReplayAnalyzing(beatMap, replay).ToString());
@@ -216,7 +216,7 @@ namespace WPF_GUI
 
                     osuDatabase.Beatmap dbBeatmap = beatMap;
 
-                    if (dbBeatmap != null && !string.IsNullOrEmpty(dbBeatmap.Hash))
+                    if (!ReferenceEquals(dbBeatmap,null) && !string.IsNullOrEmpty(dbBeatmap.Hash))
                     {
                         string beatmapPath = string.Format("{0}\\{1}\\{2}", songsFolder, dbBeatmap.FolderName, dbBeatmap.OsuFile);
                         if(!dTempDatabase.ContainsKey(dbBeatmap.Hash))
@@ -569,7 +569,7 @@ namespace WPF_GUI
 
                     beatMap = FindBeatmapInDatabase(replay);
 
-                    if (beatMap != null)
+                    if (!ReferenceEquals(beatMap,null))
                     {
                         found = true;
                         sb.AppendLine(Program.ReplayDataCollecting(beatMap, replay).ToString());

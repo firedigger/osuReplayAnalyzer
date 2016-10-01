@@ -192,7 +192,7 @@ namespace osuDodgyMomentsFinder
             {
                 var hit = this.hits.Find(x => x.frame.Equals(frame));
 
-                if(hit != null && hit.note.Type == HitObjectType.Circle)
+                if(!ReferenceEquals(hit,null) && hit.note.Type == HitObjectType.Circle)
                 {
                     if(!k1 && frame.Keys.HasFlag(Keys.K1))
                         k1 = true;
@@ -308,7 +308,7 @@ namespace osuDodgyMomentsFinder
 
             times = replay.ReplayFrames.Where(x => x.TimeDiff > 0).ToList();
 
-            if(times != null && times.Count > 0)
+            if(ReferenceEquals(times,null) && times.Count > 0)
             {
 
                 times[0].travelledDistance = distance;

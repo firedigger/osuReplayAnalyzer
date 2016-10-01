@@ -6,7 +6,6 @@ namespace osuDodgyMomentsFinder
 {
     public class MainControlFrame
     {
-        private static MainControlFrame instance;
 
         public OsuDbAPI.OsuDbFile osuDbP
         {
@@ -31,18 +30,6 @@ namespace osuDodgyMomentsFinder
             pathSongs = "";
             pathReplays = "";
             pathOsuDB = "";
-        }
-
-        public static MainControlFrame Instance
-        {
-            get
-            {
-                if(instance == null)
-                {
-                    instance = new MainControlFrame();
-                }
-                return instance;
-            }
         }
 
         public void LoadSettings()
