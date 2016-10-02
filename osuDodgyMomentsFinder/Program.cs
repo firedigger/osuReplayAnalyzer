@@ -92,11 +92,15 @@ namespace osuDodgyMomentsFinder
 
             sb.AppendLine("BEATMAP: " + beatmap.ToString());
             sb.AppendLine("REPLAY: " + replay.ToString());
-            sb.AppendLine();
 
             ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
-            sb.AppendLine(analyzer.PixelPerfectRawData().ToString());
-            //sb.AppendLine(analyzer.PixelPerfectRawData().ToString());
+            sb.AppendLine("Pixel perfect factors," + analyzer.PixelPerfectRawData().ToString());
+            sb.AppendLine("Time frame differences," + analyzer.TimeFramesRawData().ToString());
+            sb.AppendLine("Travelled distance differences," + analyzer.TravelledDistanceDiffRawData().ToString());
+            sb.AppendLine("Speed," + analyzer.SpeedRawData().ToString());
+            sb.AppendLine("Acceleration," + analyzer.AccelerationRawData().ToString());
+            sb.AppendLine("Hit errors," + analyzer.HitErrorRawData().ToString());
+            sb.AppendLine("Press key time lengths," + analyzer.PressKeyIntevalsRawData().ToString());
 
             return sb;
         }
@@ -203,17 +207,7 @@ namespace osuDodgyMomentsFinder
 
             Beatmap beatmap = new Beatmap(beatmapPath);
 
-            string res = "";
-
-            res += ("BEATMAP: " + beatmap.ToString() + "\n");
-            res += ("REPLAY: " + replay.ToString() + "\n");
-
-            ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
-            res += analyzer.MainInfo() + "\n";
-            res += analyzer.PixelPerfectInfo() + "\n";
-            res += analyzer.OveraimsInfo() + "\n";
-
-            return res;
+            return ReplayAnalyzing(beatmap, replay).ToString();
         }
 
 

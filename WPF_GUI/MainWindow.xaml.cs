@@ -526,8 +526,6 @@ namespace WPF_GUI
                 }
 
                 progressBar_Analyzing.Value = 100.0;
-
-                //SaveResult(sb);
             }
             else
             {

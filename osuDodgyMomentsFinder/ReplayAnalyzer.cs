@@ -567,7 +567,7 @@ namespace osuDodgyMomentsFinder
             sb.AppendLine("GENERIC INFO");
             if (miss.Count != replay.CountMiss)
             {
-                sb.AppendLine("WARNING! The number of misses is not consistent with the replay: " + miss.Count + " VS. " + replay.CountMiss + " (notepad user or missed on spinners or BUG in the code)");
+                sb.AppendLine("WARNING! The detected number of misses is not consistent with the replay: " + miss.Count + " VS. " + replay.CountMiss + " (notepad user or missed on spinners or BUG in the code <- MOST LIKELY :( )");
             }
             sb.AppendLine("Unstable rate = " + unstableRate());
 
@@ -580,7 +580,6 @@ namespace osuDodgyMomentsFinder
             sb.AppendLine("The best CS value = " + bestCSValue());
 
             var cursorAcceleration = accelerationList();
-            //var cursorspeed = speedList();
             sb.AppendLine("Cursor acceleration mean = " + cursorAcceleration.Average());
             sb.AppendLine("Cursor acceleration variance = " + Utils.variance(cursorAcceleration));
 
@@ -605,6 +604,72 @@ namespace osuDodgyMomentsFinder
             foreach (var hit in pixelPerfectHits)
             {
                 sb.Append(hit).Append(',');
+            }
+            return sb;
+        }
+
+        public StringBuilder TimeFramesRawData()
+        {
+            StringBuilder sb = new StringBuilder();
+            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.TimeDiff);
+            foreach (var frame in timeFrames)
+            {
+                sb.Append(frame).Append(',');
+            }
+            return sb;
+        }
+
+        public StringBuilder TravelledDistanceDiffRawData()
+        {
+            StringBuilder sb = new StringBuilder();
+            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.travelledDistanceDiff);
+            foreach (var frame in timeFrames)
+            {
+                sb.Append(frame).Append(',');
+            }
+            return sb;
+        }
+
+        public StringBuilder SpeedRawData()
+        {
+            StringBuilder sb = new StringBuilder();
+            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.speed);
+            foreach (var frame in timeFrames)
+            {
+                sb.Append(frame).Append(',');
+            }
+            return sb;
+        }
+
+        public StringBuilder AccelerationRawData()
+        {
+            StringBuilder sb = new StringBuilder();
+            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.acceleration);
+            foreach (var frame in timeFrames)
+            {
+                sb.Append(frame).Append(',');
+            }
+            return sb;
+        }
+
+        public StringBuilder HitErrorRawData()
+        {
+            StringBuilder sb = new StringBuilder();
+            var timeFrames = this.hits.ConvertAll((x) => x.note.StartTime - x.frame.Time);
+            foreach (var frame in timeFrames)
+            {
+                sb.Append(frame).Append(',');
+            }
+            return sb;
+        }
+
+        public StringBuilder PressKeyIntevalsRawData()
+        {
+            StringBuilder sb = new StringBuilder();
+            var timeFrames = calcPressIntervals();
+            foreach (var frame in timeFrames)
+            {
+                sb.Append(frame).Append(',');
             }
             return sb;
         }
