@@ -538,7 +538,7 @@ namespace osuDodgyMomentsFinder
         public StringBuilder TimeFramesRawData()
         {
             StringBuilder sb = new StringBuilder();
-            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.TimeDiff);
+            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.TimeDiff).Where((x) => x > 0);
             foreach (var frame in timeFrames)
             {
                 sb.Append(frame).Append(',');
