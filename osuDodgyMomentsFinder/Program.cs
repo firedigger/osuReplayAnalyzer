@@ -123,6 +123,8 @@ namespace osuDodgyMomentsFinder
             sb.AppendLine(analyzer.TeleportsInfo().ToString());
             sb.AppendLine();
             sb.AppendLine(analyzer.SingletapsInfo().ToString());
+            sb.AppendLine();
+            sb.AppendLine(analyzer.ExtraHitsInfo().ToString());
 
             return sb;
         }

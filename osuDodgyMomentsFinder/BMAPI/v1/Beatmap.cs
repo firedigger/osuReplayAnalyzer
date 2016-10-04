@@ -671,6 +671,7 @@ namespace BMAPI.v1
             //Console.WriteLine(ApproachTimeWindow);
             //Console.WriteLine(StackLeniency);
             //Console.WriteLine(stackTimeWindow);
+            float shiftValue = 3.5f;
 
             Dictionary<int, Point2> toChange = new Dictionary<int, Point2>();
             for(int i = HitObjects.Count - 1; i >= 0; --i)
@@ -687,7 +688,7 @@ namespace BMAPI.v1
                     {
                         if(HitObjects[i].Location == HitObjects[j].Location)
                         {
-                            var newPoint = toChange.ContainsKey(i) ? new Point2(toChange[i].X - 4, toChange[i].Y - 4) : new Point2(HitObjects[i].Location.X - 4, HitObjects[i].Location.Y - 4);
+                            var newPoint = toChange.ContainsKey(i) ? new Point2(toChange[i].X - shiftValue, toChange[i].Y - shiftValue) : new Point2(HitObjects[i].Location.X - shiftValue, HitObjects[i].Location.Y - shiftValue);
                             toChange.Add(j, newPoint);
                             //HitObjects[j].Location = new Point2(HitObjects[i].Location.X - 4, HitObjects[i].Location.Y - 4);
                             break;
