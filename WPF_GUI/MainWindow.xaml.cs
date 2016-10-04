@@ -176,7 +176,6 @@ namespace WPF_GUI
                         found = true;
 						sb.AppendLine(Program.ReplayAnalyzing(beatMap, replay).ToString());
 					}
-
 					else
 					{
 						sb.AppendLine(string.Format("{0} does not correspond to any known map", replay.Filename));
@@ -524,7 +523,16 @@ namespace WPF_GUI
                 foreach (Replay replay in listReplays)
                 {
                     progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
-                    string res = replay.SaveText();
+
+                    Beatmap beatMap = FindBeatmapInDatabase(replay);
+
+                    List<HitFrame> hits = null;
+                    if (!ReferenceEquals(beatMap,null))
+                    {
+                        hits = new ReplayAnalyzer(beatMap, replay).hits;
+                    }
+
+                    string res = replay.SaveText(hits);
                     SaveFileDialog saveReportDialog = new SaveFileDialog();
                     saveReportDialog.FileName = Path.GetFileName(replay.Filename) + ".RAW.txt";
                     saveReportDialog.Filter = "All Files|*.*;";

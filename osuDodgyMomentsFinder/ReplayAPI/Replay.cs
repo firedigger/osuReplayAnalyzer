@@ -306,7 +306,7 @@ namespace ReplayAPI
             {
                 if (!ReferenceEquals(hits, null) && hitIndex < hits.Count && hits[hitIndex].frame.Time == ReplayFrames[i].Time)
                 {
-                    sb.AppendLine(ReplayFrames[i].ToString() + " HIT ON " + hits[hitIndex].note.ToString());
+                    sb.AppendLine(ReplayFrames[i].ToString() + " HIT ON " + hits[hitIndex].note.ToString() + " (" + (hits[hitIndex].frame.Time - hits[hitIndex].note.StartTime) + "ms error)");
                     ++hitIndex;
                 }
                 else
