@@ -21,7 +21,7 @@ namespace ReplayAPI
         
         public override string ToString()
         {
-            return string.Format("{0}({1}): ({2},{3}) {5} {6}", Time, TimeDiff, X, Y, Keys, travelledDistanceDiff);
+            return string.Format("{0}({1}): ({2},{3}) {4} {5}", Time, TimeDiff, X, Y, Keys, travelledDistanceDiff);
         }
     }
 }

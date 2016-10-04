@@ -20,20 +20,9 @@ namespace osuDodgyMomentsFinder
 
         public override string ToString()
         {
-            string res = "";
-            if((note.Type.HasFlag(BMAPI.v1.HitObjectType.Circle)))
-            {
-                res += "Circle";
-            }
-            if((note.Type.HasFlag(BMAPI.v1.HitObjectType.Slider)))
-            {
-                res += "Slider";
-            }
-            res += " at ";
-            res += note.StartTime + "ms";
+            string res = note.ToString();
             res += " hit at " + frame.Time + "ms";
             res += "(" + frame.keyCounter + ")";
-            //res += "(" + frame.combo + "x)";
 
             return res;
 

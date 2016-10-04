@@ -33,5 +33,21 @@ namespace BMAPI.v1.HitObjects
         {
             return Math.Sqrt(Math.Pow((double)Point.X - (double)Location.X, 2) + Math.Pow((double)Point.Y - (double)Location.Y, 2)) <= Radius;
         }
+
+        public override string ToString() 
+        {
+            string res = "";
+            if ((Type.HasFlag(HitObjectType.Circle)))
+            {
+                res += "Circle";
+            }
+            if ((Type.HasFlag(HitObjectType.Slider)))
+            {
+                res += "Slider";
+            }
+            res += " at ";
+            res += StartTime + "ms";
+            return res;
+        }
     }
 }

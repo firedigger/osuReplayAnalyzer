@@ -11,17 +11,20 @@ namespace osuDodgyMomentsFinder
         public Replay oldReplay;
         public Beatmap beatmap;
 
-        public ReplayComparator(Replay newReplay, Replay oldReplay, Beatmap beatmap)
+        public ReplayComparator(Replay newReplay, Replay oldReplay, Beatmap beatmap) : this(newReplay, oldReplay)
         {
             this.beatmap = beatmap;
-            this.newReplay = newReplay;
-            this.oldReplay = oldReplay;
         }
 
         public ReplayComparator(Replay newReplay, Replay oldReplay)
         {
             this.newReplay = newReplay;
             this.oldReplay = oldReplay;
+
+            if (newReplay.Mods.HasFlag(Mods.HardRock) ^ oldReplay.Mods.HasFlag(Mods.HardRock))
+            {
+                newReplay.flip();
+            }
         }
 
         public double compareReplays()

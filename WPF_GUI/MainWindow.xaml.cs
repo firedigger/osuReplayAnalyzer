@@ -57,6 +57,10 @@ namespace WPF_GUI
 			OpenFileDialog replayFileDialog = new OpenFileDialog();
 			replayFileDialog.Multiselect = true;
 			replayFileDialog.Filter = "osu! replay files|*.osr";
+            if (!string.IsNullOrEmpty(settings.pathOsuDB))
+                replayFileDialog.InitialDirectory = settings.pathOsuDB;
+            if (!string.IsNullOrEmpty(settings.pathReplays))
+                replayFileDialog.InitialDirectory = settings.pathReplays;
 
 			if(replayFileDialog.ShowDialog() ?? true)
 			{
@@ -142,7 +146,6 @@ namespace WPF_GUI
 				{
 					return new Beatmap(dMapsDatabase[replay.MapHash]);
 				}
-
 				else
 				{
 					return null;
@@ -202,7 +205,6 @@ namespace WPF_GUI
             try
             {
                 osuDatabase.OsuDbFile osuDatabase = new osuDatabase.OsuDbFile(databasePath);
-
 
                 labelTask.Content = "Processing beatmaps from database...";
 
@@ -522,7 +524,15 @@ namespace WPF_GUI
                 foreach (Replay replay in listReplays)
                 {
                     progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
-                    File.WriteAllText(replay.Filename + ".RAW.txt", replay.SaveText());
+                    string res = replay.SaveText();
+                    SaveFileDialog saveReportDialog = new SaveFileDialog();
+                    saveReportDialog.FileName = Path.GetFileName(replay.Filename) + ".RAW.txt";
+                    saveReportDialog.Filter = "All Files|*.*;";
+
+                    if (saveReportDialog.ShowDialog() ?? true)
+                    {
+                        File.WriteAllText(saveReportDialog.FileName, res);
+                    }
                 }
 
                 progressBar_Analyzing.Value = 100.0;

@@ -53,18 +53,11 @@ namespace osuDodgyMomentsFinder
         {
             get; private set;
         }
-        public List<ReplayFrame> times
-        {
-            get; private set;
-        }
 
         private void applyHardrock()
         {
-            replay.AxisFlip = true;
-            beatmap.CircleSize = beatmap.CircleSize * 1.3f;
-            if(beatmap.CircleSize > 10)
-                beatmap.CircleSize = 10;
-            this.replay.ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
+            replay.flip();
+            beatmap.applyHardRock();
         }
 
         private void selectBreaks()
@@ -261,9 +254,9 @@ namespace osuDodgyMomentsFinder
             List<ReplayFrame> times = new List<ReplayFrame>();
 
             int spinnerIndex = 0;
-            for (int i = 2; i < this.times.Count - 1; ++i)
+            for (int i = 2; i < replay.times.Count - 1; ++i)
             {
-                ReplayFrame frame = this.times[i + 1], prev = this.times[i];
+                ReplayFrame frame = replay.times[i + 1], prev = replay.times[i];
 
                 if (spinnerIndex < spinners.Count && frame.Time > spinners[spinnerIndex].EndTime)
                 {
@@ -298,60 +291,17 @@ namespace osuDodgyMomentsFinder
 
         public double calculateAverageFrameTimeDiff()
         {
-            return times.ConvertAll(x => x.TimeDiff).Average();
-        }
-
-
-        private void calculateCursorSpeed()
-        {
-            double distance = 0;
-
-            times = replay.ReplayFrames.Where(x => x.TimeDiff > 0).ToList();
-
-            if(ReferenceEquals(times,null) && times.Count > 0)
-            {
-
-                times[0].travelledDistance = distance;
-                times[0].travelledDistanceDiff = 0;
-                for (int i = 0; i < times.Count - 1; ++i)
-                {
-                    ReplayFrame from = times[i], to = times[i + 1];
-                    double newDist = Utils.dist(from.X, from.Y, to.X, to.Y);
-                    distance += newDist;
-                    to.travelledDistance = distance;
-                    to.travelledDistanceDiff = newDist;
-                }
-
-                times[0].speed = 0;
-                for(int i = 0; i < times.Count - 1; ++i)
-                {
-                    ReplayFrame to = times[i + 1], current = times[i];
-
-                    double V = (to.travelledDistance - current.travelledDistance) / (to.TimeDiff);
-                    to.speed = V;
-                }
-                times.Last().speed = 0;
-
-                times[0].acceleration = 0;
-                for(int i = 0; i < times.Count - 1; ++i)
-                {
-                    ReplayFrame to = times[i + 1], current = times[i];
-
-                    double A = (to.speed - current.speed) / (to.TimeDiff);
-                    to.acceleration = A;
-                }
-                times.Last().acceleration = 0;
-            }
+            return replay.times.ConvertAll(x => x.TimeDiff).Average();
         }
 
         public List<double> speedList()
         {
-            return this.times.ConvertAll(x => x.speed);
+            return replay.times.ConvertAll(x => x.speed);
         }
 
         public List<double> accelerationList()
         {
-            return this.times.ConvertAll(x => x.acceleration);
+            return replay.times.ConvertAll(x => x.acceleration);
         }
 
         public string outputSpeed()
@@ -367,7 +317,7 @@ namespace osuDodgyMomentsFinder
         public string outputAcceleration()
         {
             string res = "";
-            foreach(var value in this.times.ConvertAll(x => x.acceleration))
+            foreach(var value in replay.times.ConvertAll(x => x.acceleration))
             {
                 res += value + ",";
             }
@@ -377,7 +327,7 @@ namespace osuDodgyMomentsFinder
         public string outputTime()
         {
             string res = "";
-            foreach(var value in this.times.ConvertAll(x => x.Time))
+            foreach(var value in replay.times.ConvertAll(x => x.Time))
             {
                 res += value + ",";
             }
@@ -389,51 +339,26 @@ namespace osuDodgyMomentsFinder
         {
             var result = new List<HitFrame>();
             int keyIndex = 0;
-            for(int i = 0; i < beatmap.HitObjects.Count; ++i)
+            for(int i = 0; i < hits.Count; ++i)
             {
-                CircleObject note = beatmap.HitObjects[i];
-                bool hover = false;
+                CircleObject note = hits[i].note;
+                //bool hover = false;
 
                 //searches for init circle object hover
                 for(int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
                 {
                     ReplayFrame frame = replay.ReplayFrames[j];
-                    if(note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && Math.Abs(frame.Time - note.StartTime) <= approachTimeWindow)
+                    if(note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow)
                     {
-                        hover = true;
-                        keyIndex = j + 1;
-                        break;
-                    }
-
-                }
-                if(hover)
-                {
-                    //searches for leaving of the object (dehover)
-                    for(int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
-                    {
-                        ReplayFrame frame = replay.ReplayFrames[j];
-                        if(!note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
+                        while(note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && frame.Time < hits[i].frame.Time)
                         {
-                            keyIndex = j + 1;
-                            break;
+                            ++j;
+                            frame = replay.ReplayFrames[j];
                         }
-                    }
-
-                    if(keyIndex >= replay.ReplayFrames.Count)
-                        return result;
-
-                    //Check whether the hit happened BEFORE the dehover
-                    int noteIndex = -1;
-                    for(int l = 0; l < this.hits.Count; ++l)
-                        if(hits[l].note.Equals(note) && hits[l].frame.Time > replay.ReplayFrames[keyIndex].Time)
+                        if (!note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
                         {
-                            noteIndex = l;
-                            break;
+                            result.Add(hits[i]);
                         }
-
-                    if (noteIndex != -1)
-                    {
-                        result.Add(hits[noteIndex]);
                     }
 
                 }
@@ -479,6 +404,8 @@ namespace osuDodgyMomentsFinder
             if (!replay.fullLoaded)
                 throw new Exception(replay.Filename + " IS NOT FULL");
 
+            multiplier = replay.Mods.HasFlag(Mods.DoubleTime) ? 1.5 : 1;
+
             this.circleRadius = beatmap.HitObjects[0].Radius;
             this.hitTimeWindow = calcTimeWindow(beatmap.OverallDifficulty);
 
@@ -492,7 +419,6 @@ namespace osuDodgyMomentsFinder
             selectBreaks();
             selectSpinners();
             associateHits();
-            calculateCursorSpeed();
         }
 
         public double findBestPixelHit()
@@ -559,6 +485,7 @@ namespace osuDodgyMomentsFinder
             return ur;
         }
 
+        private double multiplier;
 
         public StringBuilder MainInfo()
         {
@@ -571,7 +498,7 @@ namespace osuDodgyMomentsFinder
             }
             sb.AppendLine("Unstable rate = " + unstableRate());
 
-            if(unstableRate() < 47.5)
+            if(unstableRate() < 47.5 * multiplier)
             {
                 sb.AppendLine("WARNING! Unstable rate is too low (auto)");
                 sb.AppendLine();
@@ -592,7 +519,7 @@ namespace osuDodgyMomentsFinder
                 sb.AppendLine();
             }
 
-            sb.AppendLine("Average Key press time interval = " + averagePressIntervals() + "ms");
+            sb.AppendLine("Average Key press time interval = " + (averagePressIntervals() / multiplier).ToString("0.00") + "ms");
 
             return sb;
         }
@@ -749,7 +676,7 @@ namespace osuDodgyMomentsFinder
 
             foreach (var frame in singletaps)
             {
-                sb.AppendLine("* Object at " + frame.Key.note.StartTime + "ms "  + frame.Key.key + " singletapped with next at " + frame.Value.note.StartTime + " (" + (frame.Value.frame.Time - frame.Key.frame.Time) + "ms frame diff) " + " " + (frame.Key.frame.Time - frame.Key.note.StartTime) + "ms and " + (frame.Value.frame.Time - frame.Value.note.StartTime) + "ms error. ");
+                sb.AppendLine("* Object at " + frame.Key.note.StartTime + "ms "  + frame.Key.key + " singletapped with next at " + frame.Value.note.StartTime + " (" + (frame.Value.frame.Time - frame.Key.frame.Time) / multiplier + "ms real frame time diff) " + " " + (frame.Key.frame.Time - frame.Key.note.StartTime) + "ms and " + (frame.Value.frame.Time - frame.Value.note.StartTime) + "ms error. ");
             }
             return sb;
         }

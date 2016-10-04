@@ -704,29 +704,25 @@ namespace BMAPI.v1
                 HitObjects[pair.Key].Location = pair.Value;
             }
 
+        }
 
+        private bool hardRock = false;
 
-            /*List<CircleObject> queue = new List<CircleObject>();
-            foreach (CircleObject c in HitObjects)
-            {
-                foreach (CircleObject cs in queue)
-                {
-                    if (c.StartTime - cs.StartTime < stackTimeWindow)
-                    {
-                        queue.Add(c);
-                        if (c.Location == cs.Location)
-                        {
-                            c.Location = new Point2(c.Location.X + 4, c.Location.Y + 4);
-                            queue.Remove(cs);
-                            break;
-                        }
-                        else
-                        {
-                            queue.Remove(cs);
-                        }
-                    }
-                }
-            }*/
+        public void applyHardRock()
+        {
+            if (hardRock)
+                return;
+            hardRock = true;
+
+            CircleSize = CircleSize * 1.3f;
+            OverallDifficulty = OverallDifficulty * 1.3f;
+            ApproachRate = ApproachRate * 1.3f;
+            if (CircleSize > 10)
+                CircleSize = 10;
+            if (OverallDifficulty > 10)
+                OverallDifficulty = 10;
+            if (ApproachRate > 10)
+                ApproachRate = 10;
         }
 
 		public override string ToString()

@@ -1,7 +1,9 @@
-﻿using System;
+﻿using osuDodgyMomentsFinder;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace ReplayAPI
@@ -41,10 +43,6 @@ namespace ReplayAPI
         private bool headerLoaded;
         public bool fullLoaded { get; private set; }
 
-        public Replay()
-        {
-        }
-
         public Replay(string replayFile, bool fullLoad = false)
         {
             Filename = replayFile;
@@ -58,6 +56,7 @@ namespace ReplayAPI
             }
             if (fullLoad && !fullLoaded)
                 throw new Exception("Replay is not full but requsted to be read full.");
+            calculateCursorSpeed();
         }
 
         private Keys parseKeys(string v)
@@ -83,6 +82,53 @@ namespace ReplayAPI
             IsPerfect = replayReader.ReadBoolean();
             Mods = (Mods)replayReader.ReadInt32();
             headerLoaded = true;
+        }
+
+        public List<ReplayFrame> times
+        {
+            get; private set;
+        }
+
+        private void calculateCursorSpeed()
+        {
+            double distance = 0;
+
+            times = ReplayFrames.Where(x => x.TimeDiff > 0).ToList();
+
+            if (!ReferenceEquals(times, null) && times.Count > 0)
+            {
+
+                times[0].travelledDistance = distance;
+                times[0].travelledDistanceDiff = 0;
+                for (int i = 0; i < times.Count - 1; ++i)
+                {
+                    ReplayFrame from = times[i], to = times[i + 1];
+                    double newDist = Utils.dist(from.X, from.Y, to.X, to.Y);
+                    distance += newDist;
+                    to.travelledDistance = distance;
+                    to.travelledDistanceDiff = newDist;
+                }
+
+                times[0].speed = 0;
+                for (int i = 0; i < times.Count - 1; ++i)
+                {
+                    ReplayFrame to = times[i + 1], current = times[i];
+
+                    double V = (to.travelledDistance - current.travelledDistance) / (to.TimeDiff);
+                    to.speed = V;
+                }
+                times.Last().speed = 0;
+
+                times[0].acceleration = 0;
+                for (int i = 0; i < times.Count - 1; ++i)
+                {
+                    ReplayFrame to = times[i + 1], current = times[i];
+
+                    double A = (to.speed - current.speed) / (to.TimeDiff);
+                    to.acceleration = A;
+                }
+                times.Last().acceleration = 0;
+            }
         }
 
         /// <summary>
@@ -225,12 +271,18 @@ namespace ReplayAPI
             LifeFrames.Clear();
         }
 
+        public void flip()
+        {
+            AxisFlip = !AxisFlip;
+            ReplayFrames.ForEach((t) => t.Y = 384 - t.Y);
+        }
+
         public override string ToString()
         {
             return this.PlayerName + (Mods > 0 ? (" +" + Mods) : Mods.ToString()) + " on " + this.PlayTime;
         }
 
-        public string SaveText()
+        public string SaveText(List<HitFrame> hits = null)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -249,8 +301,17 @@ namespace ReplayAPI
 
             sb.AppendLine("Mods: " + Mods.ToString());
 
+            int hitIndex = 0;
             for (int i = 0; i < ReplayFrames.Count; i++)
-                sb.AppendLine(ReplayFrames[i].ToString());
+            {
+                if (!ReferenceEquals(hits, null) && hitIndex < hits.Count && hits[hitIndex].frame.Time == ReplayFrames[i].Time)
+                {
+                    sb.AppendLine(ReplayFrames[i].ToString() + " HIT ON " + hits[hitIndex].note.ToString());
+                    ++hitIndex;
+                }
+                else
+                    sb.AppendLine(ReplayFrames[i].ToString());
+            }
 
             return sb.ToString();
         }
