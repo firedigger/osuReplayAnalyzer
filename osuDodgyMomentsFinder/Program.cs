@@ -125,6 +125,8 @@ namespace osuDodgyMomentsFinder
             sb.AppendLine(analyzer.SingletapsInfo().ToString());
             sb.AppendLine();
             sb.AppendLine(analyzer.ExtraHitsInfo().ToString());
+            sb.AppendLine();
+            sb.AppendLine(analyzer.EffortlessMissesInfo().ToString());
 
             return sb;
         }

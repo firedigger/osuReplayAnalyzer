@@ -41,6 +41,10 @@ namespace osuDodgyMomentsFinder
         {
             get; private set;
         }
+        public List<CircleObject> effortlessMisses
+        {
+            get; private set;
+        }
         public List<BreakEvent> breaks
         {
             get; private set;
@@ -104,14 +108,10 @@ namespace osuDodgyMomentsFinder
             for(int i = 0; i < beatmap.HitObjects.Count; ++i)
             {
                 CircleObject note = beatmap.HitObjects[i];
-                bool flag = false;
+                bool noteHitFlag = false;
+                bool noteAttemptedHitFlag = false;
 
-                if (note.StartTime >= 85350)
-                {
-                    int a = 0;
-                }
-
-                if((note.Type.HasFlag(HitObjectType.Spinner)))
+                if ((note.Type.HasFlag(HitObjectType.Spinner)))
                     continue;
 
                 for(int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
@@ -137,23 +137,28 @@ namespace osuDodgyMomentsFinder
                     if (frame.Time - note.StartTime > hitTimeWindow)
                         break;
 
-                    if(frame.Keys != Keys.None && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && pressReady)
-                    {
-                        ++combo;
-                        frame.combo = combo;
-                        flag = true;
-                        pressReady = false;
-                        Keys pressedKey = getKey(lastKey, frame.Keys);
-                        HitFrame hitFrame = new HitFrame(note, frame, pressedKey);
-                        hitFrame.perfectness = Utils.pixelPerfectHitFactor(hitFrame.frame,hitFrame.note);
-                        hits.Add(hitFrame);
-                        lastKey = frame.Keys;
-                        keyIndex = j + 1;
-                        break;
-                    }
-
                     if (pressReady && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow)
-                        extraHits.Add(new ClickFrame(frame,getKey(lastKey, frame.Keys)));
+                    {
+                        noteAttemptedHitFlag = true;
+                        if (note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
+                        {
+                            ++combo;
+                            frame.combo = combo;
+                            noteHitFlag = true;
+                            pressReady = false;
+                            Keys pressedKey = getKey(lastKey, frame.Keys);
+                            HitFrame hitFrame = new HitFrame(note, frame, pressedKey);
+                            hitFrame.perfectness = Utils.pixelPerfectHitFactor(hitFrame.frame, hitFrame.note);
+                            hits.Add(hitFrame);
+                            lastKey = frame.Keys;
+                            keyIndex = j + 1;
+                            break;
+                        }
+                        else
+                        {
+                            extraHits.Add(new ClickFrame(frame, getKey(lastKey, frame.Keys)));
+                        }
+                    }
 
                     pressReady = false;
 
@@ -163,11 +168,14 @@ namespace osuDodgyMomentsFinder
 
                 }
 
-                if(!flag)
+                if(!noteHitFlag)
                 {
                     misses.Add(note);
                 }
-
+                if (!noteAttemptedHitFlag)
+                {
+                    effortlessMisses.Add(note);
+                }
             }
         }
 
@@ -427,6 +435,7 @@ namespace osuDodgyMomentsFinder
 
             hits = new List<HitFrame>();
             misses = new List<CircleObject>();
+            effortlessMisses = new List<CircleObject>();
             extraHits = new List<ClickFrame>();
             breaks = new List<BreakEvent>();
             spinners = new List<SpinnerObject>();
@@ -695,6 +704,21 @@ namespace osuDodgyMomentsFinder
             foreach (var frame in extraHits)
             {
                 sb.AppendLine(frame.ToString());
+            }
+
+            return sb;
+        }
+
+        public StringBuilder EffortlessMissesInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Effortless misses");
+
+            sb.AppendLine("Effortless misses count: " + effortlessMisses.Count);
+
+            foreach (var note in effortlessMisses)
+            {
+                sb.AppendLine(note.ToString() + " missed without a corresponding hit");
             }
 
             return sb;
