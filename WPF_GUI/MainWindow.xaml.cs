@@ -11,6 +11,7 @@ using WinForms = System.Windows.Forms;
 using osuDatabase = OsuDbAPI;
 using System.Diagnostics;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace WPF_GUI
 {
@@ -154,50 +155,71 @@ namespace WPF_GUI
 			}
 		}
 
+        private void doOnUIThread(Action a)
+        {
+            Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, a);
+        }
+
 		private void button_AnalyzeReplays_Click(object sender, RoutedEventArgs e)
 		{
 			Beatmap beatMap = null;
 			StringBuilder sb = new StringBuilder();
 
             labelTask.Content = "Analyzing replays...";
+            progressBar_Analyzing.Value = 0;
+
+            var tasks = new List<Task>();
 
             if (listReplays.Count > 0)
             {
-                int iQueue = 0;
                 bool found = false;
 
                 foreach (Replay replay in listReplays)
                 {
-                    progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
-
-                    beatMap = FindBeatmapInDatabase(replay);
-
-                    if (!ReferenceEquals(beatMap, null))
+                    var a = Task.Run(() => 
                     {
-                        found = true;
-                        sb.AppendLine(Program.ReplayAnalyzing(beatMap, replay).ToString());
-                    }
-                    else
-                    {
-                        sb.AppendLine(string.Format("{0} does not correspond to any known map", replay.Filename));
-                    }
+                        beatMap = FindBeatmapInDatabase(replay);
+
+                        string newLine;
+
+                        if (!ReferenceEquals(beatMap, null))
+                        {
+                            found = true;
+                            newLine = Program.ReplayAnalyzing(beatMap, replay).ToString();
+                        }
+                        else
+                        {
+                            newLine = string.Format("{0} does not correspond to any known map", replay.Filename);
+                        }
+
+                        lock (sb)
+                        {
+                            sb.AppendLine(newLine);
+                        }
+
+                        doOnUIThread(() => progressBar_Analyzing.Value += (100.0 / listReplays.Count));
+                    });
+                    tasks.Add(a);
                 }
 
-                if (!found)
+                Task.Run(() => 
                 {
-                    sb.AppendLine("You have probably not imported the map(s). Make sure to load your osu DB using the button.");
-                }
-
-                progressBar_Analyzing.Value = 100.0;
-
-                SaveResult(sb);
+                    Task.WaitAll(tasks.ToArray());
+                    doOnUIThread(() => 
+                    {
+                        labelTask.Content = "Finished analyzing replays.";
+                        SaveResult(sb);
+                        if (!found)
+                        {
+                            sb.AppendLine("You have probably not imported the map(s). Make sure to load your osu DB using the button.");
+                        }
+                    });
+                });
             }
             else
             {
                 MessageBox.Show("Error! No replays selected.");
             }
-
-            labelTask.Content = "Finished analyzing replays.";
 
 		}
 
@@ -517,34 +539,41 @@ namespace WPF_GUI
         private void rawData_button_Click(object sender, RoutedEventArgs e)
         {
             labelTask.Content = "Converting replays...";
-
-            if (listReplays.Count > 0)
+            progressBar_Analyzing.Value = 0;
+            Task.Run(() =>
             {
-                int iQueue = 0;
-
-                foreach (Replay replay in listReplays)
+                
+                if (listReplays.Count > 0)
                 {
-                    progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
 
-                    string res = replay.SaveText(FindBeatmapInDatabase(replay));
-                    SaveFileDialog saveReportDialog = new SaveFileDialog();
-                    saveReportDialog.FileName = Path.GetFileName(replay.Filename) + ".RAW.txt";
-                    saveReportDialog.Filter = "All Files|*.*;";
-
-                    if (saveReportDialog.ShowDialog() ?? true)
+                    foreach (Replay replay in listReplays)
                     {
-                        File.WriteAllText(saveReportDialog.FileName, res);
+                        doOnUIThread(() => progressBar_Analyzing.Value += (100.0 / listReplays.Count));
+
+                        string res = replay.SaveText(FindBeatmapInDatabase(replay));
+
+                        doOnUIThread(() =>
+                        {
+                            SaveFileDialog saveReportDialog = new SaveFileDialog();
+                            saveReportDialog.FileName = Path.GetFileName(replay.Filename) + ".RAW.txt";
+                            saveReportDialog.Filter = "All Files|*.*;";
+
+                            if (saveReportDialog.ShowDialog() ?? true)
+                            {
+                                File.WriteAllText(saveReportDialog.FileName, res);
+                            }
+                        });
                     }
+
+                    //doOnUIThread(() => progressBar_Analyzing.Value = 100.0);
+                }
+                else
+                {
+                    doOnUIThread(() => MessageBox.Show("Error! No replays selected."));
                 }
 
-                progressBar_Analyzing.Value = 100.0;
-            }
-            else
-            {
-                MessageBox.Show("Error! No replays selected.");
-            }
-
-            labelTask.Content = "Finished converting replays.";
+                doOnUIThread(() => labelTask.Content = "Finished converting replays.");
+            });
         }
 
         private void openReplaysFolder_button_Click(object sender, RoutedEventArgs e)

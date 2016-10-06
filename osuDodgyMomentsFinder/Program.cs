@@ -127,6 +127,7 @@ namespace osuDodgyMomentsFinder
             sb.AppendLine(analyzer.ExtraHitsInfo().ToString());
             sb.AppendLine();
             sb.AppendLine(analyzer.EffortlessMissesInfo().ToString());
+            sb.AppendLine("=================================================");
 
             return sb;
         }
