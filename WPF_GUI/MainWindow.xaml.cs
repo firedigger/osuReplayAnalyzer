@@ -10,6 +10,7 @@ using System.Windows;
 using WinForms = System.Windows.Forms;
 using osuDatabase = OsuDbAPI;
 using System.Diagnostics;
+using System.Threading.Tasks;
 
 namespace WPF_GUI
 {
@@ -158,45 +159,46 @@ namespace WPF_GUI
 			Beatmap beatMap = null;
 			StringBuilder sb = new StringBuilder();
 
-			labelTask.Content = "Analyzing replays...";
+            labelTask.Content = "Analyzing replays...";
 
-			if(listReplays.Count > 0)
-			{
-				int iQueue = 0;
+            if (listReplays.Count > 0)
+            {
+                int iQueue = 0;
                 bool found = false;
 
-				foreach(Replay replay in listReplays)
-				{
-					progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
+                foreach (Replay replay in listReplays)
+                {
+                    progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
 
-					beatMap = FindBeatmapInDatabase(replay);
+                    beatMap = FindBeatmapInDatabase(replay);
 
-					if(!ReferenceEquals(beatMap,null))
-					{
+                    if (!ReferenceEquals(beatMap, null))
+                    {
                         found = true;
-						sb.AppendLine(Program.ReplayAnalyzing(beatMap, replay).ToString());
-					}
-					else
-					{
-						sb.AppendLine(string.Format("{0} does not correspond to any known map", replay.Filename));
-					}
-				}
+                        sb.AppendLine(Program.ReplayAnalyzing(beatMap, replay).ToString());
+                    }
+                    else
+                    {
+                        sb.AppendLine(string.Format("{0} does not correspond to any known map", replay.Filename));
+                    }
+                }
 
                 if (!found)
                 {
                     sb.AppendLine("You have probably not imported the map(s). Make sure to load your osu DB using the button.");
                 }
 
-				progressBar_Analyzing.Value = 100.0;
+                progressBar_Analyzing.Value = 100.0;
 
-				SaveResult(sb);
-			}
-			else
-			{
-				MessageBox.Show("Error! No replays selected.");
-			}
+                SaveResult(sb);
+            }
+            else
+            {
+                MessageBox.Show("Error! No replays selected.");
+            }
 
-			labelTask.Content = "Finished analyzing replays.";
+            labelTask.Content = "Finished analyzing replays.";
+
 		}
 
 		private void ParseDatabaseFile(string databasePath, string songsFolder)
@@ -524,15 +526,7 @@ namespace WPF_GUI
                 {
                     progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
 
-                    Beatmap beatMap = FindBeatmapInDatabase(replay);
-
-                    List<HitFrame> hits = null;
-                    if (!ReferenceEquals(beatMap,null))
-                    {
-                        hits = new ReplayAnalyzer(beatMap, replay).hits;
-                    }
-
-                    string res = replay.SaveText(hits);
+                    string res = replay.SaveText(FindBeatmapInDatabase(replay));
                     SaveFileDialog saveReportDialog = new SaveFileDialog();
                     saveReportDialog.FileName = Path.GetFileName(replay.Filename) + ".RAW.txt";
                     saveReportDialog.Filter = "All Files|*.*;";

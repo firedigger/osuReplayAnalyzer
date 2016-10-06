@@ -8,7 +8,11 @@ namespace osuDodgyMomentsFinder
         public ReplayFrame frame { get; set; }
         public CircleObject note { get; set; }
         public Keys key { get; set; }
-        public double perfectness { get; set; }
+
+        public double perfectness()
+        {
+            return Utils.pixelPerfectHitFactor(frame, note);
+        }
 
         public HitFrame(CircleObject note, ReplayFrame frame, Keys key)
         {
@@ -22,7 +26,7 @@ namespace osuDodgyMomentsFinder
         {
             string res = note.ToString();
             res += " hit at " + frame.Time + "ms";
-            res += "(" + frame.keyCounter + ")";
+            //res += "(" + frame.keyCounter + ")";
 
             return res;
 

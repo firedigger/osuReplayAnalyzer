@@ -37,6 +37,10 @@ namespace osuDodgyMomentsFinder
         {
             get; private set;
         }
+        public List<HitFrame> attemptedHits
+        {
+            get; private set;
+        }
         public List<CircleObject> misses
         {
             get; private set;
@@ -93,7 +97,6 @@ namespace osuDodgyMomentsFinder
         private void associateHits()
         {
             int keyIndex = 0;
-            bool pressReady = false;
             Keys lastKey;
             KeyCounter keyCounter = new KeyCounter();
 
@@ -119,8 +122,7 @@ namespace osuDodgyMomentsFinder
                     ReplayFrame frame = replay.ReplayFrames[j];
                     lastKey = j > 0 ? replay.ReplayFrames[j - 1].Keys : Keys.None;
 
-                    if (getKey(lastKey, frame.Keys) > 0)
-                        pressReady = true;
+                    Keys pressedKey = getKey(lastKey, frame.Keys);
 
                     if(breakIndex < breaks.Count && frame.Time > breaks[breakIndex].EndTime)
                     {
@@ -137,18 +139,15 @@ namespace osuDodgyMomentsFinder
                     if (frame.Time - note.StartTime > hitTimeWindow)
                         break;
 
-                    if (pressReady && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow)
+                    if (pressedKey > 0 && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow)
                     {
-                        noteAttemptedHitFlag = true;
                         if (note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
                         {
+                            noteAttemptedHitFlag = true;
                             ++combo;
                             frame.combo = combo;
                             noteHitFlag = true;
-                            pressReady = false;
-                            Keys pressedKey = getKey(lastKey, frame.Keys);
                             HitFrame hitFrame = new HitFrame(note, frame, pressedKey);
-                            hitFrame.perfectness = Utils.pixelPerfectHitFactor(hitFrame.frame, hitFrame.note);
                             hits.Add(hitFrame);
                             lastKey = frame.Keys;
                             keyIndex = j + 1;
@@ -156,11 +155,22 @@ namespace osuDodgyMomentsFinder
                         }
                         else
                         {
-                            extraHits.Add(new ClickFrame(frame, getKey(lastKey, frame.Keys)));
+                            if (Utils.dist(note.Location.X, note.Location.Y, frame.X, frame.Y) > 150)
+                            {
+                                extraHits.Add(new ClickFrame(frame, getKey(lastKey, frame.Keys)));
+                            }
+                            else
+                            {
+                                noteAttemptedHitFlag = true;
+                                attemptedHits.Add(new HitFrame(note, frame, pressedKey));
+                            }
                         }
                     }
-
-                    pressReady = false;
+                    if (pressedKey > 0 && Math.Abs(frame.Time - note.StartTime) <= 3 * hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
+                    {
+                        noteAttemptedHitFlag = true;
+                        attemptedHits.Add(new HitFrame(note, frame, pressedKey));
+                    }
 
                     lastKey = frame.Keys;
 
@@ -434,6 +444,7 @@ namespace osuDodgyMomentsFinder
             this.approachTimeWindow = 1800 - 120 * beatmap.ApproachRate;
 
             hits = new List<HitFrame>();
+            attemptedHits = new List<HitFrame>();
             misses = new List<CircleObject>();
             effortlessMisses = new List<CircleObject>();
             extraHits = new List<ClickFrame>();
@@ -476,7 +487,7 @@ namespace osuDodgyMomentsFinder
 
             foreach (var pair in hits)
             {
-                double factor = pair.perfectness;
+                double factor = pair.perfectness();
                 pixelPerfectHits.Add(factor);
             }
 
@@ -490,7 +501,7 @@ namespace osuDodgyMomentsFinder
 
             foreach(var pair in this.hits)
             {
-                double factor = pair.perfectness;
+                double factor = pair.perfectness();
                 if(factor >= threshold)
                     pixelPerfectHits.Add(new KeyValuePair<double, HitFrame>(factor, pair));
             }
@@ -512,6 +523,7 @@ namespace osuDodgyMomentsFinder
         }
 
         private double multiplier;
+        
 
         public StringBuilder MainInfo()
         {
@@ -671,7 +683,7 @@ namespace osuDodgyMomentsFinder
 
             foreach(var hit in overAims)
             {
-                sb.AppendLine("* " + hit + " perfectness rate = " + hit.perfectness);
+                sb.AppendLine("* " + hit + " perfectness rate = " + hit.perfectness());
             }
 
             return sb;

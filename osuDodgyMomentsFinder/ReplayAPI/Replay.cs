@@ -1,4 +1,5 @@
-﻿using osuDodgyMomentsFinder;
+﻿using BMAPI.v1;
+using osuDodgyMomentsFinder;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -282,7 +283,7 @@ namespace ReplayAPI
             return this.PlayerName + (Mods > 0 ? (" +" + Mods) : Mods.ToString()) + " on " + this.PlayTime;
         }
 
-        public string SaveText(List<HitFrame> hits = null)
+        public string SaveText(Beatmap map = null)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -301,16 +302,32 @@ namespace ReplayAPI
 
             sb.AppendLine("Mods: " + Mods.ToString());
 
+            List<HitFrame> hits = null;
+            List<HitFrame> attemptedHits = null;
+            if (!ReferenceEquals(map, null))
+            {
+                var analyzer = new ReplayAnalyzer(map, this);
+                hits = analyzer.hits;
+                attemptedHits = analyzer.attemptedHits;
+            }
+
             int hitIndex = 0;
+            int attemptedHitIndex = 0;
             for (int i = 0; i < ReplayFrames.Count; i++)
             {
                 if (!ReferenceEquals(hits, null) && hitIndex < hits.Count && hits[hitIndex].frame.Time == ReplayFrames[i].Time)
                 {
                     sb.AppendLine(ReplayFrames[i].ToString() + " HIT ON " + hits[hitIndex].note.ToString() + " (" + (hits[hitIndex].frame.Time - hits[hitIndex].note.StartTime) + "ms error)");
                     ++hitIndex;
+                    continue;
                 }
-                else
-                    sb.AppendLine(ReplayFrames[i].ToString());
+                if (!ReferenceEquals(attemptedHits, null) && attemptedHitIndex < attemptedHits.Count && attemptedHits[attemptedHitIndex].frame.Time == ReplayFrames[i].Time)
+                {
+                    sb.AppendLine(ReplayFrames[i].ToString() + " ATTEMPTED HIT ON " + attemptedHits[attemptedHitIndex].note.ToString() + " (" + (attemptedHits[attemptedHitIndex].frame.Time - attemptedHits[attemptedHitIndex].note.StartTime) + "ms error)");
+                    ++attemptedHitIndex;
+                    continue;
+                }
+                sb.AppendLine(ReplayFrames[i].ToString());
             }
 
             return sb.ToString();
