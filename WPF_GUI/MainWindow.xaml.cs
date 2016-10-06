@@ -321,7 +321,6 @@ namespace WPF_GUI
 			Dictionary<Beatmap, Replay> pairs = new Dictionary<Beatmap, Replay>();
 
 			labelTask.Content = "Analyzing replays in folder...";
-
 			try
 			{
 				DirectoryInfo directory = new DirectoryInfo(settings.pathReplays);
@@ -352,7 +351,6 @@ namespace WPF_GUI
 					sb.AppendLine(Program.ReplayAnalyzing(map, replay).ToString());
 				}
 			}
-
 			catch(Exception exp)
 			{
 				MessageBox.Show(exp.ToString());
