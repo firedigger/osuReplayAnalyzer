@@ -534,19 +534,18 @@ namespace osuDodgyMomentsFinder
             {
                 sb.AppendLine("WARNING! The detected number of misses is not consistent with the replay: " + misses.Count + " VS. " + replay.CountMiss + " (notepad user or missed on spinners or BUG in the code <- MOST LIKELY )");
             }
+            else
+            {
+                sb.AppendLine("Misses: " + misses.Count);
+            }
             sb.AppendLine("Unstable rate = " + unstableRate());
 
             if(unstableRate() < 47.5 * multiplier)
             {
                 sb.AppendLine("WARNING! Unstable rate is too low (auto)");
-                sb.AppendLine();
             }
 
             sb.AppendLine("The best CS value = " + bestCSValue());
-
-            var cursorAcceleration = accelerationList();
-            sb.AppendLine("Cursor acceleration mean = " + cursorAcceleration.Average());
-            sb.AppendLine("Cursor acceleration variance = " + Utils.variance(cursorAcceleration));
 
             double averageFrameTimeDiff = calculateAverageFrameTimeDiff();
             sb.AppendLine("Average frame time difference = " + averageFrameTimeDiff + "ms");
@@ -554,7 +553,6 @@ namespace osuDodgyMomentsFinder
             if((replay.Mods.HasFlag(Mods.DoubleTime) && averageFrameTimeDiff < 17.35) || (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiff < 12.55))
             {
                 sb.AppendLine("WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods (timewarp)!");
-                sb.AppendLine();
             }
 
             sb.AppendLine("Average Key press time interval = " + (averagePressIntervals() / multiplier).ToString("0.00") + "ms");
@@ -562,6 +560,19 @@ namespace osuDodgyMomentsFinder
 
             return sb;
         }
+
+        public StringBuilder CursorInfo()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Cursor movement Info");
+
+            var cursorAcceleration = accelerationList();
+            sb.AppendLine("Cursor acceleration mean = " + cursorAcceleration.Average());
+            sb.AppendLine("Cursor acceleration variance = " + Utils.variance(cursorAcceleration));
+
+            return sb;
+        }
+
 
         public StringBuilder PixelPerfectRawData()
         {

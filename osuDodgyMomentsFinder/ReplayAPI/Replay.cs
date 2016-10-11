@@ -44,7 +44,7 @@ namespace ReplayAPI
         private bool headerLoaded;
         public bool fullLoaded { get; private set; }
 
-        public Replay(string replayFile, bool fullLoad = false)
+        public Replay(string replayFile, bool fullLoad, bool calculateSpeed)
         {
             Filename = replayFile;
             using (replayReader = new BinaryReader(new FileStream(replayFile, FileMode.Open, FileAccess.Read, FileShare.Read)))
@@ -57,7 +57,8 @@ namespace ReplayAPI
             }
             if (fullLoad && !fullLoaded)
                 throw new Exception("Replay is not full but requsted to be read full.");
-            calculateCursorSpeed();
+            if (calculateSpeed)
+                calculateCursorSpeed();
         }
 
         private Keys parseKeys(string v)

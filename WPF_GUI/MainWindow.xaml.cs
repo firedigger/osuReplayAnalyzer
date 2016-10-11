@@ -75,7 +75,7 @@ namespace WPF_GUI
 				{
 					try
 					{
-						listReplays.Add(new Replay(replayFile, true));
+						listReplays.Add(new Replay(replayFile, true, true));
 					}
 
 					catch(Exception ex)
@@ -168,6 +168,8 @@ namespace WPF_GUI
             labelTask.Content = "Analyzing replays...";
             progressBar_Analyzing.Value = 0;
 
+            bool onlyMainInfo = onlyMainInfo_checkbox.IsChecked.Value;
+
             var tasks = new List<Task>();
 
             if (listReplays.Count > 0)
@@ -185,7 +187,15 @@ namespace WPF_GUI
                         if (!ReferenceEquals(beatMap, null))
                         {
                             found = true;
-                            newLine = Program.ReplayAnalyzing(beatMap, replay).ToString();
+
+                            //doOnUIThread(() => MessageBox.Show(onlyMainInfo_checkbox.IsChecked.Value.ToString()));
+
+                            //doOnUIThread(() => MessageBox.Show(Program.ReplayAnalyzing(beatMap, replay, onlyMainInfo_checkbox.IsChecked.Value).ToString()));
+                            
+                            //bool onlyMainInfo = false;
+                            newLine = Program.ReplayAnalyzing(beatMap, replay, onlyMainInfo).ToString();
+                            //newLine = Program.ReplayAnalyzing(beatMap, replay).ToString();
+                            //doOnUIThread(() => MessageBox.Show("DONE"));
                         }
                         else
                         {
@@ -259,6 +269,15 @@ namespace WPF_GUI
             }
 		}
 
+        private void showInReportDialogue(string s)
+        {
+            ReportDialog dialog = new ReportDialog();
+            dialog.textBox_Results.Text = s;
+            dialog.textBox_Results.HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Disabled;
+            dialog.textBox_Results.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
+            dialog.Show();
+        }
+
 		private void SaveResult(StringBuilder sb)
 		{
 			// remove whitespaces
@@ -280,11 +299,7 @@ namespace WPF_GUI
 
 			if(checkBox_AlertOutput.IsChecked ?? true)
 			{
-				ReportDialog dialog = new ReportDialog();
-				dialog.textBox_Results.Text = sb.ToString();
-				dialog.textBox_Results.HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Disabled;
-				dialog.textBox_Results.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
-				dialog.Show();
+                showInReportDialogue(sb.ToString());
 			}
 		}
 
@@ -346,9 +361,9 @@ namespace WPF_GUI
 					progressBar_Analyzing.Value = (100.0 / replaysFiles.Count) * iQueue++;
 
 					string path = file;
-					Replay replay = new Replay(path, true);
+					Replay replay = new Replay(path, true, true);
 					Beatmap map = FindBeatmapInDatabase(replay);
-					sb.AppendLine(Program.ReplayAnalyzing(map, replay).ToString());
+					sb.AppendLine(Program.ReplayAnalyzing(map, replay, onlyMainInfo_checkbox.IsChecked.Value).ToString());
 				}
 			}
 			catch(Exception exp)
@@ -476,7 +491,7 @@ namespace WPF_GUI
 				{
 					progressBar_Analyzing.Value = (100.0 / replaysFiles.Count) * iQueue++;
 
-					Replay replay = new Replay(path, true);
+					Replay replay = new Replay(path, true, true);
 					replays.Add(replay);
 				}
 
@@ -521,7 +536,7 @@ namespace WPF_GUI
 				{
 					progressBar_Analyzing.Value = (100.0 / replaysFiles.Count) * iQueue++;
 
-					Replay replay = new Replay(path, true);
+					Replay replay = new Replay(path, true, true);
 					replays.Add(replay);
 				}
 
@@ -640,6 +655,16 @@ namespace WPF_GUI
             }
 
             labelTask.Content = "Finished collecting data from replays.";
+        }
+
+        private void exit_button_Click(object sender, RoutedEventArgs e)
+        {
+            Close();
+        }
+
+        private void help_button_Click(object sender, RoutedEventArgs e)
+        {
+            showInReportDialogue("This is help!");
         }
     }
 }

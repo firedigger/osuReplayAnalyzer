@@ -43,7 +43,7 @@ namespace osuDodgyMomentsFinder
                     mapsFiles.Add(file.Name);
                 }
             }
-            var replays = replaysFiles.ConvertAll((path) => new Replay(path, true));
+            var replays = replaysFiles.ConvertAll((path) => new Replay(path, true, true));
 
             var osuDBmaps = settings.osuDbP.Beatmaps;
 
@@ -105,7 +105,7 @@ namespace osuDodgyMomentsFinder
             return sb;
         }
 
-        public static StringBuilder ReplayAnalyzing(Beatmap beatmap, Replay replay)
+        public static StringBuilder ReplayAnalyzing(Beatmap beatmap, Replay replay, bool onlyMainInfo = false)
         {
             StringBuilder sb = new StringBuilder();
 
@@ -116,17 +116,23 @@ namespace osuDodgyMomentsFinder
             ReplayAnalyzer analyzer = new ReplayAnalyzer(beatmap, replay);
             sb.AppendLine(analyzer.MainInfo().ToString());
             sb.AppendLine();
-            sb.AppendLine(analyzer.PixelPerfectInfo().ToString());
-            sb.AppendLine();
-            sb.AppendLine(analyzer.OveraimsInfo().ToString());
-            sb.AppendLine();
-            sb.AppendLine(analyzer.TeleportsInfo().ToString());
-            sb.AppendLine();
-            sb.AppendLine(analyzer.SingletapsInfo().ToString());
-            sb.AppendLine();
-            sb.AppendLine(analyzer.ExtraHitsInfo().ToString());
-            sb.AppendLine();
-            sb.AppendLine(analyzer.EffortlessMissesInfo().ToString());
+
+            if (!onlyMainInfo)
+            {
+                sb.AppendLine(analyzer.CursorInfo().ToString());
+                sb.AppendLine();
+                sb.AppendLine(analyzer.PixelPerfectInfo().ToString());
+                sb.AppendLine();
+                sb.AppendLine(analyzer.OveraimsInfo().ToString());
+                sb.AppendLine();
+                sb.AppendLine(analyzer.TeleportsInfo().ToString());
+                sb.AppendLine();
+                sb.AppendLine(analyzer.SingletapsInfo().ToString());
+                sb.AppendLine();
+                sb.AppendLine(analyzer.ExtraHitsInfo().ToString());
+                sb.AppendLine();
+                sb.AppendLine(analyzer.EffortlessMissesInfo().ToString());
+            }
             sb.AppendLine("=================================================");
 
             return sb;
@@ -155,7 +161,7 @@ namespace osuDodgyMomentsFinder
 
         public static void CompareReplays(List<string> replaysFiles, double threshold)
         {
-            var replays = replaysFiles.ConvertAll((path) => new Replay(path, true));
+            var replays = replaysFiles.ConvertAll((path) => new Replay(path, true, true));
 
             for(int i = 0; i < replays.Count; ++i)
             {
@@ -260,7 +266,7 @@ namespace osuDodgyMomentsFinder
             }
             if(args[0] == "-i")
             {
-                Console.WriteLine(ReplayAnalyzing(new Replay(args[1], true)));
+                Console.WriteLine(ReplayAnalyzing(new Replay(args[1], true, true)));
             }
             if(args[0] == "-c")
                 ReplayComparison(args.SubArray(1));
@@ -270,7 +276,7 @@ namespace osuDodgyMomentsFinder
             {
                 if(args.Length == 1)
                     args = UIUtils.getArgsFromUser();
-                CursorSpeed(new Beatmap(args[1]), new Replay(args[2], true));
+                CursorSpeed(new Beatmap(args[1]), new Replay(args[2], true, true));
             }
 
         }
