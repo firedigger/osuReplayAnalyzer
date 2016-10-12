@@ -481,32 +481,31 @@ namespace osuDodgyMomentsFinder
             return result;
         }
 
-        private List<double> findAllPixelHits()
+        private List<HitFrame> findAllPixelHits()
         {
-            var pixelPerfectHits = new List<double>();
+            var pixelPerfectHits = new List<HitFrame>();
 
             foreach (var pair in hits)
             {
-                double factor = pair.perfectness();
-                pixelPerfectHits.Add(factor);
+                pixelPerfectHits.Add(pair);
             }
 
             return pixelPerfectHits;
         }
 
 
-        public List<KeyValuePair<double, HitFrame>> findSortedPixelPerfectHits(int maxSize, double threshold)
+        public List<HitFrame> findSortedPixelPerfectHits(int maxSize, double threshold)
         {
-            var pixelPerfectHits = new List<KeyValuePair<double, HitFrame>>();
+            var pixelPerfectHits = new List<HitFrame>();
 
             foreach(var pair in this.hits)
             {
-                double factor = pair.perfectness();
+                double factor = pair.Perfectness;
                 if(factor >= threshold)
-                    pixelPerfectHits.Add(new KeyValuePair<double, HitFrame>(factor, pair));
+                    pixelPerfectHits.Add(pair);
             }
 
-            pixelPerfectHits.Sort((a, b) => b.Key.CompareTo(a.Key));
+            pixelPerfectHits.Sort((a, b) => b.Perfectness.CompareTo(a.Perfectness));
 
             return pixelPerfectHits.GetRange(0, Math.Min(maxSize, pixelPerfectHits.Count));
         }
@@ -557,6 +556,11 @@ namespace osuDodgyMomentsFinder
 
             sb.AppendLine("Average Key press time interval = " + (averagePressIntervals() / multiplier).ToString("0.00") + "ms");
             sb.AppendLine("Extra hits = " + extraHits.Count);
+
+            if (replay.Mods.HasFlag(Mods.NoFail))
+            {
+                sb.AppendLine("Pass = " + replay.IsPass());
+            }
 
             return sb;
         }
@@ -656,26 +660,33 @@ namespace osuDodgyMomentsFinder
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("PIXEL PERFECT");
 
-            var pixelPerfectHits = findSortedPixelPerfectHits(1000, 0.98);
-            double bestPxPerfect = findBestPixelHit();
+            var pixelHits = findAllPixelHits();
+            var values = pixelHits.Select((x) => x.Perfectness).ToList();
+            double bestPxPerfect = pixelHits.Max((a) => a.Perfectness);
             sb.AppendLine("The best pixel perfect hit = " + bestPxPerfect);
+            double median = Utils.Median(values);
+            double variance = Utils.variance(values);
+            sb.AppendLine("Median pixel perfect hit = " + median);
+            sb.AppendLine("Perfectness variance = " + variance);
 
-            if(bestPxPerfect < 0.5)
+            if (bestPxPerfect < 0.5 || variance < 0.01 || median < 0.2)
             {
-                sb.AppendLine("WARNING! Player is clicking into the center of the note too consistently (autohack or 2* map)");
+                sb.AppendLine("WARNING! Player is aiming the notes too consistently (autohack)");
                 sb.AppendLine();
             }
 
-            sb.AppendLine("Pixel perfect hits: " + pixelPerfectHits.Count);
+            var pixelperfectHits = pixelHits.Where((x) => x.Perfectness > 0.98);
 
-            foreach(var hit in pixelPerfectHits)
+            sb.AppendLine("Pixel perfect hits: " + pixelperfectHits.Count());
+
+            foreach(var hit in pixelperfectHits)
             {
-                sb.AppendLine("* " + hit.Key + " " + hit.Value);
+                sb.AppendLine("* " + hit);
             }
 
-            var LOLpixelPerfectHits = findSortedPixelPerfectHits(100, 0.99);
+            var LOLpixelPerfectHits = pixelperfectHits.Where((x) => x.Perfectness > 0.99);
 
-            if(LOLpixelPerfectHits.Count > 40)
+            if(LOLpixelPerfectHits.Count() > 10)
             {
                 sb.AppendLine("WARNING! Player is constantly doing pixel perfect hits (relax)");
                 sb.AppendLine();
@@ -694,7 +705,7 @@ namespace osuDodgyMomentsFinder
 
             foreach(var hit in overAims)
             {
-                sb.AppendLine("* " + hit + " perfectness rate = " + hit.perfectness());
+                sb.AppendLine("* " + hit.ToString());
             }
 
             return sb;

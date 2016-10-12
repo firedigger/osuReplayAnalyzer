@@ -202,6 +202,8 @@ namespace ReplayAPI
                 fullLoaded = true;
             }
 
+            ReplayFrames.RemoveRange(0, 2);
+
             //Todo: There are some extra bytes here
         }
 
@@ -281,7 +283,7 @@ namespace ReplayAPI
 
         public override string ToString()
         {
-            return this.PlayerName + (Mods > 0 ? (" +" + Mods) : Mods.ToString()) + " on " + this.PlayTime;
+            return this.PlayerName + " +" + Mods.ToString() + " on " + this.PlayTime;
         }
 
         public string SaveText(Beatmap map = null)
@@ -318,13 +320,13 @@ namespace ReplayAPI
             {
                 if (!ReferenceEquals(hits, null) && hitIndex < hits.Count && hits[hitIndex].frame.Time == ReplayFrames[i].Time)
                 {
-                    sb.AppendLine(ReplayFrames[i].ToString() + " HIT ON " + hits[hitIndex].note.ToString() + " (" + (hits[hitIndex].frame.Time - hits[hitIndex].note.StartTime) + "ms error)");
+                    sb.AppendLine(ReplayFrames[i].ToString() + " " + hits[hitIndex].ToString());
                     ++hitIndex;
                     continue;
                 }
                 if (!ReferenceEquals(attemptedHits, null) && attemptedHitIndex < attemptedHits.Count && attemptedHits[attemptedHitIndex].frame.Time == ReplayFrames[i].Time)
                 {
-                    sb.AppendLine(ReplayFrames[i].ToString() + " ATTEMPTED HIT ON " + attemptedHits[attemptedHitIndex].note.ToString() + " (" + (attemptedHits[attemptedHitIndex].frame.Time - attemptedHits[attemptedHitIndex].note.StartTime) + "ms error)");
+                    sb.AppendLine(ReplayFrames[i].ToString() + " " + attemptedHits[attemptedHitIndex].note.ToString());
                     ++attemptedHitIndex;
                     continue;
                 }
@@ -332,6 +334,11 @@ namespace ReplayAPI
             }
 
             return sb.ToString();
+        }
+
+        public bool IsPass()
+        {
+            return (!this.Mods.HasFlag(Mods.NoFail)) || LifeFrames.All((x) => x.Percentage > 0);
         }
     }
 }

@@ -9,9 +9,13 @@ namespace osuDodgyMomentsFinder
         public CircleObject note { get; set; }
         public Keys key { get; set; }
 
-        public double perfectness()
+        private double _perfectness = -1;
+        public double Perfectness { get { return _perfectness > -1 ? _perfectness : calc_perfectness(); } private set { } }
+
+        private double calc_perfectness()
         {
-            return Utils.pixelPerfectHitFactor(frame, note);
+            _perfectness = Utils.pixelPerfectHitFactor(frame, note);
+            return _perfectness;
         }
 
         public HitFrame(CircleObject note, ReplayFrame frame, Keys key)
@@ -24,8 +28,11 @@ namespace osuDodgyMomentsFinder
 
         public override string ToString()
         {
+            double hit = Perfectness;
             string res = note.ToString();
-            res += " hit at " + frame.Time + "ms";
+            res += hit <= 1 ? "" : " ATTEMPTED";
+            res += " HIT at " + frame.Time + "ms";
+            res += " (" + (frame.Time - note.StartTime) + "ms error, " + hit + " perfectness)";
             //res += "(" + frame.keyCounter + ")";
 
             return res;
