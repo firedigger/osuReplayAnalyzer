@@ -554,7 +554,12 @@ namespace osuDodgyMomentsFinder
                 sb.AppendLine("WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods (timewarp)!");
             }
 
-            sb.AppendLine("Average Key press time interval = " + (averagePressIntervals() / multiplier).ToString("0.00") + "ms");
+            double averageKeyPressTime = (averagePressIntervals() / multiplier);
+            sb.AppendLine("Average Key press time interval = " + averageKeyPressTime.ToString("0.00") + "ms");
+            if (averageKeyPressTime < 30)
+            {
+                sb.AppendLine("WARNING! Average Key press time interval is inhumanly low (timewarp/relax)!");
+            }
             sb.AppendLine("Extra hits = " + extraHits.Count);
 
             if (replay.Mods.HasFlag(Mods.NoFail))
@@ -686,7 +691,7 @@ namespace osuDodgyMomentsFinder
 
             var LOLpixelPerfectHits = pixelperfectHits.Where((x) => x.Perfectness > 0.99);
 
-            if(LOLpixelPerfectHits.Count() > 10)
+            if(LOLpixelPerfectHits.Count() > 15)
             {
                 sb.AppendLine("WARNING! Player is constantly doing pixel perfect hits (relax)");
                 sb.AppendLine();
