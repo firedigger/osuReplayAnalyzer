@@ -255,11 +255,6 @@ namespace osuDodgyMomentsFinder
             return result;
         }
 
-        public double averagePressIntervals()
-        {
-            return calcPressIntervals().Average();
-        }
-
         public List<KeyValuePair<HitFrame, HitFrame>> checkTappingConsistency()
         {
             var times = new List<KeyValuePair<HitFrame, HitFrame>>();
@@ -323,7 +318,7 @@ namespace osuDodgyMomentsFinder
 
         public double calculateAverageFrameTimeDiff()
         {
-            return replay.times.ConvertAll(x => x.TimeDiff).Average();
+            return replay.times.ConvertAll(x => x.TimeDiff).Where(x => x > 0 && x < 30).Average();
         }
 
         public List<double> speedList()
@@ -529,7 +524,7 @@ namespace osuDodgyMomentsFinder
             StringBuilder sb = new StringBuilder();
 
             sb.AppendLine("GENERIC INFO");
-            if (misses.Count != replay.CountMiss)
+            if (misses.Count > replay.CountMiss)
             {
                 sb.AppendLine("WARNING! The detected number of misses is not consistent with the replay: " + misses.Count + " VS. " + replay.CountMiss + " (notepad user or missed on spinners or BUG in the code <- MOST LIKELY )");
             }
@@ -549,13 +544,16 @@ namespace osuDodgyMomentsFinder
             double averageFrameTimeDiff = calculateAverageFrameTimeDiff();
             sb.AppendLine("Average frame time difference = " + averageFrameTimeDiff + "ms");
 
-            if((replay.Mods.HasFlag(Mods.DoubleTime) && averageFrameTimeDiff < 17.35) || (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiff < 12.55))
+            if((replay.Mods.HasFlag(Mods.DoubleTime) && averageFrameTimeDiff < 17.35) || (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiff < 12.4))
             {
                 sb.AppendLine("WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods (timewarp)!");
             }
 
-            double averageKeyPressTime = (averagePressIntervals() / multiplier);
-            sb.AppendLine("Average Key press time interval = " + averageKeyPressTime.ToString("0.00") + "ms");
+            var keyPressIntervals = calcPressIntervals();
+
+            double averageKeyPressTime = (Utils.median(keyPressIntervals) / multiplier);
+            sb.AppendLine("Median Key press time interval = " + averageKeyPressTime.ToString("0.00") + "ms");
+            sb.AppendLine("Min Key press time interval = " + (keyPressIntervals.Min() / multiplier).ToString("0.00") + "ms");
             if (averageKeyPressTime < 30)
             {
                 sb.AppendLine("WARNING! Average Key press time interval is inhumanly low (timewarp/relax)!");
