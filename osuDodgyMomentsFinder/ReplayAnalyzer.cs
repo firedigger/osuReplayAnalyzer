@@ -544,7 +544,7 @@ namespace osuDodgyMomentsFinder
             double averageFrameTimeDiff = calculateAverageFrameTimeDiff();
             sb.AppendLine("Average frame time difference = " + averageFrameTimeDiff + "ms");
 
-            if((replay.Mods.HasFlag(Mods.DoubleTime) && averageFrameTimeDiff < 17.35) || (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiff < 12.4))
+            if((replay.Mods.HasFlag(Mods.DoubleTime) && averageFrameTimeDiff < 17.35) || (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiff < 12))
             {
                 sb.AppendLine("WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods (timewarp)!");
             }

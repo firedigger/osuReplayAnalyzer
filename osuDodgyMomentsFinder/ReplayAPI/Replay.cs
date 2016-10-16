@@ -202,7 +202,7 @@ namespace ReplayAPI
                 fullLoaded = true;
             }
 
-            ReplayFrames.RemoveRange(0, 2);
+            ReplayFrames.RemoveRange(0, 3);
 
             //Todo: There are some extra bytes here
         }
