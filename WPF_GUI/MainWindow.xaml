@@ -12,20 +12,20 @@
         <CheckBox x:Name="checkBox_SaveToFile" Content="Save to file" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,116,0,0" Background="White" Foreground="White" Height="15" Width="94" IsChecked="False" FontSize="10"/>
         <CheckBox x:Name="onlyMainInfo_checkbox" Content="Only Main info" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,141,0,0" Background="White" Foreground="White" Height="15" Width="105" IsChecked="False" FontSize="10"/>
         <ProgressBar x:Name="progressBar_Analyzing" HorizontalAlignment="Left" Width="445" Margin="10,244,0,0" Height="18" VerticalAlignment="Top"/>
-        <Button x:Name="button_ChooseReplays" Content="Choose Replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="105" Margin="10,15,0,0" Height="20" Click="button_ChooseReplays_Click" FontSize="10"/>
-        <Button x:Name="button_AnalyzeReplays" Content="Analyze Replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="105" Margin="10,48,0,0" Height="20" Click="button_AnalyzeReplays_Click" FontSize="10"/>
-        <Button x:Name="button_ChooseFolder" Content="Choose Folder&#xD;&#xA;With Replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="336,15,0,0" Height="37" Click="button_ChooseFolder_Click" FontSize="10"/>
-        <Button x:Name="button_AnalyzeFolder" Content="Analyze Folder" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="228,48,0,0" Height="20" Click="button_AnalyzeFolder_Click" FontSize="10"/>
-        <Button x:Name="button_ChooseMap" Content="Choose Map (.osu)" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="120,15,0,0" Height="20" Click="button_ChooseMap_Click" FontSize="10"/>
+        <Button x:Name="button_ChooseReplays" Content="Choose replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="105" Margin="10,15,0,0" Height="20" Click="button_ChooseReplays_Click" FontSize="10"/>
+        <Button x:Name="button_AnalyzeReplays" Content="Analyze replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="105" Margin="10,48,0,0" Height="20" Click="button_AnalyzeReplays_Click" FontSize="10"/>
+        <Button x:Name="button_ChooseFolder" Content="Choose folder&#xA;with replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="336,15,0,0" Height="37" Click="button_ChooseFolder_Click" FontSize="10"/>
+        <Button x:Name="button_AnalyzeFolder" Content="Analyze folder" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="228,48,0,0" Height="20" Click="button_AnalyzeFolder_Click" FontSize="10"/>
+        <Button x:Name="button_ChooseMap" Content="Choose map (.osu)" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="120,15,0,0" Height="20" Click="button_ChooseMap_Click" FontSize="10"/>
         <Button x:Name="button_OpenDatabase" Content="Open osu!.db" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="120,48,0,0" Height="20" Click="button_OpenDatabase_Click" FontSize="10"/>
-        <Button x:Name="button_CompareSelected" Content="Compare Selected Replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="228,15,0,0" Height="20" Click="button_CompareSelected_Click" FontSize="10"/>
-        <Button x:Name="button_CompareFolder" Content="Compare All&#xD;&#xA;From Folder" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="336,57,0,0" Height="36" Click="button_CompareFolder_Click" FontSize="10"/>
-        <Button x:Name="button_CompareSelectedAgainstFolder" Content="Compare Selected&#xA;   Against Folder" HorizontalAlignment="Left"  VerticalAlignment="Top"  Width="103" Margin="336,98,0,0" Height="38" Click="button_CompareSelectedAgainstFolder_Click" FontSize="10" IsCancel="True"/>
+        <Button x:Name="button_CompareSelected" Content="Compare selected Replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="228,15,0,0" Height="20" Click="button_CompareSelected_Click" FontSize="10"/>
+        <Button x:Name="button_CompareFolder" Content="Compare all&#xA;from folder" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="336,57,0,0" Height="36" Click="button_CompareFolder_Click" FontSize="10"/>
+        <Button x:Name="button_CompareSelectedAgainstFolder" Content="Compare selected&#xA;   against Folder" HorizontalAlignment="Left"  VerticalAlignment="Top"  Width="103" Margin="336,98,0,0" Height="38" Click="button_CompareSelectedAgainstFolder_Click" FontSize="10" IsCancel="True"/>
         <Label x:Name="labelTask" Content="" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,176,0,0" Foreground="White"/>
-        <Button x:Name="rawData_button" Content="Raw replay Data" HorizontalAlignment="Left" Margin="120,83,0,0" VerticalAlignment="Top" Width="103" Height="20" Click="rawData_button_Click" FontSize="10"/>
+        <Button x:Name="rawData_button" Content="Raw replay data" HorizontalAlignment="Left" Margin="120,83,0,0" VerticalAlignment="Top" Width="103" Height="20" Click="rawData_button_Click" FontSize="10"/>
         <Button x:Name="openReplaysFolder_button" Content="Open replay folder" HorizontalAlignment="Left" Margin="120,118,0,0" VerticalAlignment="Top" Width="103" Height="20" FontSize="10" Click="openReplaysFolder_button_Click"/>
         <Button x:Name="rawFeatures_button" Content="Raw features data" HorizontalAlignment="Left" Margin="228,83,0,0" VerticalAlignment="Top" Width="103" Height="20" FontSize="10" Click="rawFeatures_button_Click"/>
         <Button x:Name="exit_button" Content="Exit" HorizontalAlignment="Left" VerticalAlignment="Top" Width="105" Margin="336,202,0,0" Height="20" Click="exit_button_Click" FontSize="10"/>
-        <Button x:Name="help_button" Content="Help and About" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="228,118,0,0" Height="20" Click="help_button_Click" FontSize="10"/>
+        <Button x:Name="help_button" Content="About" HorizontalAlignment="Left" VerticalAlignment="Top" Width="103" Margin="228,118,0,0" Height="20" Click="help_button_Click" FontSize="10"/>
     </Grid>
 </Window>
