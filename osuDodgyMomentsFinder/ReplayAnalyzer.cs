@@ -1,11 +1,12 @@
-﻿using BMAPI.v1;
-using BMAPI.v1.Events;
-using BMAPI.v1.HitObjects;
-using ReplayAPI;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using BMAPI;
+using BMAPI.v1;
+using BMAPI.v1.Events;
+using BMAPI.v1.HitObjects;
+using ReplayAPI;
 
 namespace osuDodgyMomentsFinder
 {
@@ -17,54 +18,53 @@ namespace osuDodgyMomentsFinder
     public class ReplayAnalyzer
     {
         //The beatmap
-        private Beatmap beatmap;
+        private readonly Beatmap beatmap;
 
         //The replay
-        private Replay replay;
+        private readonly Replay replay;
 
         //Circle radius
-        private double circleRadius;
+        private readonly double circleRadius;
 
         //hit time window
-        private double hitTimeWindow;
+        private readonly double hitTimeWindow;
 
         //hit time window
-        private double approachTimeWindow;
 
 
         //The list of pair of a <hit, object hit>
         public List<HitFrame> hits
         {
-            get; private set;
+            get;
         }
         public List<HitFrame> attemptedHits
         {
-            get; private set;
+            get;
         }
 
-	    private List<CircleObject> misses
+        private List<CircleObject> misses
         {
-            get; set;
+            get;
         }
 
-	    private List<CircleObject> effortlessMisses
+        private List<CircleObject> effortlessMisses
         {
-            get; set;
+            get;
         }
 
-	    private List<BreakEvent> breaks
+        private List<BreakEvent> breaks
         {
-            get; set;
+            get;
         }
 
-	    private List<SpinnerObject> spinners
+        private List<SpinnerObject> spinners
         {
-            get; set;
+            get;
         }
 
-	    private List<ClickFrame> extraHits
+        private List<ClickFrame> extraHits
         {
-            get; set;
+            get;
         }
 
         private void applyHardrock()
@@ -75,22 +75,22 @@ namespace osuDodgyMomentsFinder
 
         private void selectBreaks()
         {
-            foreach(var event1 in this.beatmap.Events)
+            foreach (var event1 in beatmap.Events)
             {
-                if(event1.GetType() == typeof(BreakEvent))
+                if (event1.GetType() == typeof(BreakEvent))
                 {
-                    this.breaks.Add((BreakEvent)event1);
+                    breaks.Add((BreakEvent)event1);
                 }
             }
         }
 
         private void selectSpinners()
         {
-            foreach (var obj in this.beatmap.HitObjects)
+            foreach (var obj in beatmap.HitObjects)
             {
                 if (obj.Type.HasFlag(HitObjectType.Spinner))
                 {
-                    this.spinners.Add((SpinnerObject)obj);
+                    spinners.Add((SpinnerObject)obj);
                 }
             }
         }
@@ -98,10 +98,9 @@ namespace osuDodgyMomentsFinder
         private void associateHits()
         {
             int keyIndex = 0;
-            Keys lastKey;
-            KeyCounter keyCounter = new KeyCounter();
+            var keyCounter = new KeyCounter();
 
-            if((replay.Mods & Mods.HardRock) > 0)
+            if ((replay.Mods & Mods.HardRock) > 0)
             {
                 applyHardrock();
             }
@@ -109,28 +108,27 @@ namespace osuDodgyMomentsFinder
             int breakIndex = 0;
             int combo = 0;
 
-            for(int i = 0; i < beatmap.HitObjects.Count; ++i)
+            foreach (CircleObject note in beatmap.HitObjects)
             {
-                CircleObject note = beatmap.HitObjects[i];
                 bool noteHitFlag = false;
                 bool noteAttemptedHitFlag = false;
 
-                if ((note.Type.HasFlag(HitObjectType.Spinner)))
+                if (note.Type.HasFlag(HitObjectType.Spinner))
                     continue;
 
-                for(int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
+                for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
                 {
-                    ReplayFrame frame = replay.ReplayFrames[j];
-                    lastKey = j > 0 ? replay.ReplayFrames[j - 1].Keys : Keys.None;
+                    var frame = replay.ReplayFrames[j];
+                    var lastKey = j > 0 ? replay.ReplayFrames[j - 1].Keys : Keys.None;
 
-                    Keys pressedKey = getKey(lastKey, frame.Keys);
+                    var pressedKey = getKey(lastKey, frame.Keys);
 
-                    if(breakIndex < breaks.Count && frame.Time > breaks[breakIndex].EndTime)
+                    if (breakIndex < breaks.Count && frame.Time > breaks[breakIndex].EndTime)
                     {
                         ++breakIndex;
                     }
 
-                    if(frame.Time >= beatmap.HitObjects[0].StartTime - hitTimeWindow && (breakIndex >= breaks.Count || frame.Time < this.breaks[breakIndex].StartTime - hitTimeWindow))
+                    if (frame.Time >= beatmap.HitObjects[0].StartTime - hitTimeWindow && (breakIndex >= breaks.Count || frame.Time < breaks[breakIndex].StartTime - hitTimeWindow))
                     {
                         keyCounter.Update(lastKey, frame.Keys);
                     }
@@ -142,44 +140,37 @@ namespace osuDodgyMomentsFinder
 
                     if (pressedKey > 0 && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow)
                     {
-                        if (note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
+                        if (note.ContainsPoint(new Point2(frame.X, frame.Y)))
                         {
                             noteAttemptedHitFlag = true;
                             ++combo;
                             frame.combo = combo;
                             noteHitFlag = true;
-                            HitFrame hitFrame = new HitFrame(note, frame, pressedKey);
-                            hits.Add(hitFrame);
-                            lastKey = frame.Keys;
+                            hits.Add(new HitFrame(note, frame, pressedKey));
                             keyIndex = j + 1;
                             break;
                         }
+                        if (Utils.dist(note.Location.X, note.Location.Y, frame.X, frame.Y) > 150)
+                        {
+                            extraHits.Add(new ClickFrame(frame, getKey(lastKey, frame.Keys)));
+                        }
                         else
                         {
-                            if (Utils.dist(note.Location.X, note.Location.Y, frame.X, frame.Y) > 150)
-                            {
-                                extraHits.Add(new ClickFrame(frame, getKey(lastKey, frame.Keys)));
-                            }
-                            else
-                            {
-                                noteAttemptedHitFlag = true;
-                                attemptedHits.Add(new HitFrame(note, frame, pressedKey));
-                            }
+                            noteAttemptedHitFlag = true;
+                            attemptedHits.Add(new HitFrame(note, frame, pressedKey));
                         }
                     }
-                    if (pressedKey > 0 && Math.Abs(frame.Time - note.StartTime) <= 3 * hitTimeWindow && note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
+                    if (pressedKey > 0 && Math.Abs(frame.Time - note.StartTime) <= 3 * hitTimeWindow && note.ContainsPoint(new Point2(frame.X, frame.Y)))
                     {
                         noteAttemptedHitFlag = true;
                         attemptedHits.Add(new HitFrame(note, frame, pressedKey));
                     }
 
-                    lastKey = frame.Keys;
-
                     frame.combo = combo;
 
                 }
 
-                if(!noteHitFlag)
+                if (!noteHitFlag)
                 {
                     misses.Add(note);
                 }
@@ -193,13 +184,13 @@ namespace osuDodgyMomentsFinder
         private Keys getKey(Keys last, Keys current)
         {
             Keys res = Keys.None;
-            if(!last.HasFlag(Keys.M1) && current.HasFlag(Keys.M1) && !current.HasFlag(Keys.K1))
+            if (!last.HasFlag(Keys.M1) && current.HasFlag(Keys.M1) && !current.HasFlag(Keys.K1))
                 res |= Keys.M1;
-            if(!last.HasFlag(Keys.M2) && current.HasFlag(Keys.M2) && !current.HasFlag(Keys.K2))
+            if (!last.HasFlag(Keys.M2) && current.HasFlag(Keys.M2) && !current.HasFlag(Keys.K2))
                 res |= Keys.M2;
-            if(!last.HasFlag(Keys.K1) && current.HasFlag(Keys.K1))
+            if (!last.HasFlag(Keys.K1) && current.HasFlag(Keys.K1))
                 res |= Keys.K1 | Keys.M1;
-            if(!last.HasFlag(Keys.K2) && current.HasFlag(Keys.K2))
+            if (!last.HasFlag(Keys.K2) && current.HasFlag(Keys.K2))
                 res |= Keys.K2 | Keys.M2;
             return res;
         }
@@ -210,26 +201,26 @@ namespace osuDodgyMomentsFinder
 
             bool k1 = false, k2 = false;
             double k1_timer = 0, k2_timer = 0;
-            foreach(var frame in this.replay.ReplayFrames)
+            foreach (var frame in replay.ReplayFrames)
             {
-                var hit = this.hits.Find(x => x.frame.Equals(frame));
+                var hit = hits.Find(x => x.frame.Equals(frame));
 
-                if(!ReferenceEquals(hit,null) && hit.note.Type == HitObjectType.Circle)
+                if (!ReferenceEquals(hit, null) && hit.note.Type == HitObjectType.Circle)
                 {
-                    if(!k1 && frame.Keys.HasFlag(Keys.K1))
+                    if (!k1 && frame.Keys.HasFlag(Keys.K1))
                         k1 = true;
 
-                    if(!k2 && frame.Keys.HasFlag(Keys.K2))
+                    if (!k2 && frame.Keys.HasFlag(Keys.K2))
                         k2 = true;
                 }
 
                 //k1
-                if(k1 && frame.Keys.HasFlag(Keys.K1))
+                if (k1 && frame.Keys.HasFlag(Keys.K1))
                 {
                     k1_timer += frame.TimeDiff;
                 }
 
-                if(k1 && !frame.Keys.HasFlag(Keys.K1))
+                if (k1 && !frame.Keys.HasFlag(Keys.K1))
                 {
                     k1 = false;
                     result.Add(k1_timer);
@@ -237,12 +228,12 @@ namespace osuDodgyMomentsFinder
                 }
 
                 //k2
-                if(k2 && frame.Keys.HasFlag(Keys.K2))
+                if (k2 && frame.Keys.HasFlag(Keys.K2))
                 {
                     k2_timer += frame.TimeDiff;
                 }
 
-                if(k2 && !frame.Keys.HasFlag(Keys.K2))
+                if (k2 && !frame.Keys.HasFlag(Keys.K2))
                 {
                     k2 = false;
                     result.Add(k2_timer);
@@ -256,38 +247,39 @@ namespace osuDodgyMomentsFinder
             return result;
         }
 
-	    private List<KeyValuePair<HitFrame, HitFrame>> checkTappingConsistency()
+        private List<KeyValuePair<HitFrame, HitFrame>> checkTappingConsistency()
         {
             var times = new List<KeyValuePair<HitFrame, HitFrame>>();
 
-            double limit = (90 * (replay.Mods.HasFlag(Mods.DoubleTime) ? 1.5 : 1));
+            double limit = 90 * (replay.Mods.HasFlag(Mods.DoubleTime) ? 1.5 : 1);
 
             for (int i = 0; i < hits.Count - 1; ++i)
             {
                 HitFrame hit1 = hits[i], hit2 = hits[i + 1];
 
-                if (((hit2.frame.Time - hit1.frame.Time <= limit) || (hit2.note.StartTime - hit1.note.StartTime <= limit)) && ((hit1.key & hit2.key) > 0))
+                if ((hit2.frame.Time - hit1.frame.Time <= limit || hit2.note.StartTime - hit1.note.StartTime <= limit) && (hit1.key & hit2.key) > 0)
                     times.Add(new KeyValuePair<HitFrame, HitFrame>(hit1, hit2));
             }
 
             return times;
         }
 
-	    private List<ReplayFrame> findCursorTeleports()
+        private List<ReplayFrame> findCursorTeleports()
         {
-            List<ReplayFrame> times = new List<ReplayFrame>();
+            var times = new List<ReplayFrame>();
 
             int spinnerIndex = 0;
+
             for (int i = 2; i < replay.times.Count - 1; ++i)
             {
-                ReplayFrame frame = replay.times[i + 1], prev = replay.times[i];
+                var frame = replay.times[i + 1];
 
                 if (spinnerIndex < spinners.Count && frame.Time > spinners[spinnerIndex].EndTime)
                 {
                     ++spinnerIndex;
                 }
 
-                if (isTeleport(prev, frame) && (spinnerIndex >= spinners.Count || frame.Time < spinners[spinnerIndex].StartTime))
+                if (isTeleport(frame) && (spinnerIndex >= spinners.Count || frame.Time < spinners[spinnerIndex].StartTime))
                 {
                     times.Add(frame);
                 }
@@ -296,7 +288,7 @@ namespace osuDodgyMomentsFinder
             return times;
         }
 
-        private bool isTeleport(ReplayFrame prev, ReplayFrame frame)
+        private bool isTeleport(ReplayFrame frame)
         {
             if (frame.travelledDistanceDiff >= 40 && double.IsInfinity(frame.speed))
                 return true;
@@ -304,7 +296,7 @@ namespace osuDodgyMomentsFinder
             return frame.travelledDistanceDiff >= 150 && frame.speed >= 6;
         }
 
-        public string outputDistances() 
+        public string outputDistances()
         {
             string res = "";
             foreach (var value in findCursorTeleports())
@@ -314,41 +306,41 @@ namespace osuDodgyMomentsFinder
             return res.Remove(res.Length - 1);
         }
 
-	    private double calculateAverageFrameTimeDiff()
+        private double calculateAverageFrameTimeDiff()
         {
             return replay.times.ConvertAll(x => x.TimeDiff).Where(x => x > 0 && x < 30).Average();
         }
 
-		private double calculateAverageFrameTimeDiffv2()
-		{
-			int count = 0;
-			int sum = 0;
+        private double calculateAverageFrameTimeDiffv2()
+        {
+            int count = 0;
+            int sum = 0;
 
-			for(int i = 1; i < replay.times.Count - 1; i++)
-			{
-				if(!replay.times[i - 1].Keys.HasFlag(Keys.K1) && !replay.times[i - 1].Keys.HasFlag(Keys.K2) && !replay.times[i - 1].Keys.HasFlag(Keys.M1) && !replay.times[i - 1].Keys.HasFlag(Keys.M2) &&
-					!replay.times[i].Keys.HasFlag(Keys.K1) && !replay.times[i].Keys.HasFlag(Keys.K2) && !replay.times[i].Keys.HasFlag(Keys.M1) && !replay.times[i].Keys.HasFlag(Keys.M2) &&
-					!replay.times[i + 1].Keys.HasFlag(Keys.K1) && !replay.times[i + 1].Keys.HasFlag(Keys.K2) && !replay.times[i + 1].Keys.HasFlag(Keys.M1) && !replay.times[i + 1].Keys.HasFlag(Keys.M2))
-				{
-					count++;
-					sum += replay.times[i].TimeDiff;
-				}
-			}
+            for (int i = 1; i < replay.times.Count - 1; i++)
+            {
+                if (!replay.times[i - 1].Keys.HasFlag(Keys.K1) && !replay.times[i - 1].Keys.HasFlag(Keys.K2) && !replay.times[i - 1].Keys.HasFlag(Keys.M1) && !replay.times[i - 1].Keys.HasFlag(Keys.M2) &&
+                    !replay.times[i].Keys.HasFlag(Keys.K1) && !replay.times[i].Keys.HasFlag(Keys.K2) && !replay.times[i].Keys.HasFlag(Keys.M1) && !replay.times[i].Keys.HasFlag(Keys.M2) &&
+                    !replay.times[i + 1].Keys.HasFlag(Keys.K1) && !replay.times[i + 1].Keys.HasFlag(Keys.K2) && !replay.times[i + 1].Keys.HasFlag(Keys.M1) && !replay.times[i + 1].Keys.HasFlag(Keys.M2))
+                {
+                    count++;
+                    sum += replay.times[i].TimeDiff;
+                }
+            }
 
-			if(count == 0)
-			{
-				return -1.0;
-			}
+            if (count == 0)
+            {
+                return -1.0;
+            }
 
-			return (double)sum / count;
-		}
+            return (double)sum / count;
+        }
 
-	    private List<double> speedList()
+        private List<double> speedList()
         {
             return replay.times.ConvertAll(x => x.speed);
         }
 
-	    private List<double> accelerationList()
+        private List<double> accelerationList()
         {
             return replay.times.ConvertAll(x => x.acceleration);
         }
@@ -356,48 +348,48 @@ namespace osuDodgyMomentsFinder
         public string outputSpeed()
         {
             string res = speedList().Aggregate("", (current, value) => current + (value + ","));
-	        return res.Remove(res.Length - 1);
+            return res.Remove(res.Length - 1);
         }
 
         public string outputAcceleration()
         {
             string res = replay.times.ConvertAll(x => x.acceleration).Aggregate("", (current, value) => current + (value + ","));
-	        return res.Remove(res.Length - 1);
+            return res.Remove(res.Length - 1);
         }
 
         public string outputTime()
         {
             string res = replay.times.ConvertAll(x => x.Time).Aggregate("", (current, value) => current + (value + ","));
-	        return res.Remove(res.Length - 1);
+            return res.Remove(res.Length - 1);
         }
 
 
-	    private List<HitFrame> findOverAimHits()
+        private List<HitFrame> findOverAimHits()
         {
             var result = new List<HitFrame>();
             int keyIndex = 0;
-            for(int i = 0; i < hits.Count; ++i)
+
+            foreach (var t in hits)
             {
-                CircleObject note = hits[i].note;
-                //bool hover = false;
+                var note = t.note;
 
                 //searches for init circle object hover
-                for(int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
+                for (int j = keyIndex; j < replay.ReplayFrames.Count; ++j)
                 {
                     ReplayFrame frame = replay.ReplayFrames[j];
-                    if(note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow)
+                    if (!note.ContainsPoint(new Point2(frame.X, frame.Y)) ||
+                       !(Math.Abs(frame.Time - note.StartTime) <= hitTimeWindow)) continue;
+
+                    while (note.ContainsPoint(new Point2(frame.X, frame.Y)) && frame.Time < t.frame.Time)
                     {
-                        while(note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)) && frame.Time < hits[i].frame.Time)
-                        {
-                            ++j;
-                            frame = replay.ReplayFrames[j];
-                        }
-                        if (!note.ContainsPoint(new BMAPI.Point2(frame.X, frame.Y)))
-                        {
-                            result.Add(hits[i]);
-                        }
+                        ++j;
+                        frame = replay.ReplayFrames[j];
                     }
 
+                    if (!note.ContainsPoint(new Point2(frame.X, frame.Y)))
+                    {
+                        result.Add(t);
+                    }
                 }
             }
             return result;
@@ -405,7 +397,7 @@ namespace osuDodgyMomentsFinder
 
 
         //Recalculate the highest CS value for which the player would still have the same amount of misses
-	    private double bestCSValue()
+        private double bestCSValue()
         {
             double pixelPerfect = findBestPixelHit();
 
@@ -424,7 +416,7 @@ namespace osuDodgyMomentsFinder
         public string outputMisses()
         {
             string res = "";
-            this.misses.ForEach((note) => res += "Didn't find the hit for " + note.StartTime);
+            misses.ForEach(note => res += "Didn't find the hit for " + note.StartTime);
             return res;
         }
 
@@ -446,8 +438,6 @@ namespace osuDodgyMomentsFinder
             circleRadius = beatmap.HitObjects[0].Radius;
             hitTimeWindow = calcTimeWindow(beatmap.OverallDifficulty);
 
-            approachTimeWindow = 1800 - 120 * beatmap.ApproachRate;
-
             hits = new List<HitFrame>();
             attemptedHits = new List<HitFrame>();
             misses = new List<CircleObject>();
@@ -462,20 +452,20 @@ namespace osuDodgyMomentsFinder
         }
 
 
-	    private double findBestPixelHit()
+        private double findBestPixelHit()
         {
-            return hits.Max((pair) => Utils.pixelPerfectHitFactor(pair.frame, pair.note));
+            return hits.Max(pair => Utils.pixelPerfectHitFactor(pair.frame, pair.note));
         }
 
         public List<double> findPixelPerfectHits(double threshold)
         {
             List<double> result = new List<double>();
 
-            foreach(var pair in this.hits)
+            foreach (var pair in hits)
             {
                 double factor = Utils.pixelPerfectHitFactor(pair.frame, pair.note);
 
-                if(factor >= threshold)
+                if (factor >= threshold)
                 {
                     result.Add(pair.note.StartTime);
                 }
@@ -502,7 +492,7 @@ namespace osuDodgyMomentsFinder
         {
             var pixelPerfectHits = (from pair in hits let factor = pair.Perfectness where factor >= threshold select pair).ToList();
 
-	        pixelPerfectHits.Sort((a, b) => b.Perfectness.CompareTo(a.Perfectness));
+            pixelPerfectHits.Sort((a, b) => b.Perfectness.CompareTo(a.Perfectness));
 
             return pixelPerfectHits.GetRange(0, Math.Min(maxSize, pixelPerfectHits.Count));
         }
@@ -510,67 +500,63 @@ namespace osuDodgyMomentsFinder
 
         private double ur = -1;
 
-	    private double unstableRate()
+        private double unstableRate()
         {
-            if(ur >= 0)
+            if (ur >= 0)
                 return ur;
-            List<double> values = hits.ConvertAll(pair => (double)pair.frame.Time - pair.note.StartTime);
+            var values = hits.ConvertAll(pair => (double)pair.frame.Time - pair.note.StartTime);
             ur = 10 * Utils.variance(values);
             return ur;
         }
 
         private readonly double multiplier;
-        
+
 
         public StringBuilder MainInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             sb.AppendLine("GENERIC INFO");
-            if (misses.Count > replay.CountMiss)
-            {
-                sb.AppendLine("WARNING! The detected number of misses is not consistent with the replay: " + misses.Count + " VS. " + replay.CountMiss + " (notepad user or missed on spinners or BUG in the code <- MOST LIKELY )");
-            }
-            else
-            {
-                sb.AppendLine("Misses: " + misses.Count);
-            }
-            sb.AppendLine("Unstable rate = " + unstableRate());
 
-            if(unstableRate() < 47.5 * multiplier)
+            sb.AppendLine(misses.Count > replay.CountMiss
+                ? $"WARNING! The detected number of misses is not consistent with the replay: {misses.Count} VS. {replay.CountMiss} (notepad user or missed on spinners or BUG in the code <- MOST LIKELY )"
+                : $"Misses: {misses.Count}");
+
+            sb.AppendLine($"Unstable rate: {unstableRate()}");
+
+            if (unstableRate() < 47.5 * multiplier)
             {
                 sb.AppendLine("WARNING! Unstable rate is too low (auto)");
             }
 
-            sb.AppendLine("The best CS value = " + bestCSValue());
+            sb.AppendLine($"The best CS value: {bestCSValue()}");
+            sb.AppendLine($"Average frame time difference: {calculateAverageFrameTimeDiff()}ms");
 
-            double averageFrameTimeDiff = calculateAverageFrameTimeDiff();
-            sb.AppendLine("Average frame time difference = " + averageFrameTimeDiff + "ms");
+            double averageFrameTimeDiffv2 = calculateAverageFrameTimeDiffv2();
+            sb.AppendLine($"Average frame time difference v2 (aim only!): {averageFrameTimeDiffv2}ms");
 
-			double averageFrameTimeDiffv2 = calculateAverageFrameTimeDiffv2();
-			sb.AppendLine("Average frame time difference (v2/aim only!) = " + averageFrameTimeDiffv2 + "ms");
-
-			if(((replay.Mods.HasFlag(Mods.DoubleTime) || replay.Mods.HasFlag(Mods.NightCore)) && averageFrameTimeDiffv2 < 17.35)
-			   || (!replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiffv2 < 12.3))
-			{
-				sb.AppendLine("WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods (timewarp)!");
-				sb.AppendLine();
-			}
+            if ((replay.Mods.HasFlag(Mods.DoubleTime) || replay.Mods.HasFlag(Mods.NightCore)) && averageFrameTimeDiffv2 < 17.35
+               || !replay.Mods.HasFlag(Mods.HalfTime) && averageFrameTimeDiffv2 < 12.3)
+            {
+                sb.AppendLine("WARNING! Average frame time difference is not consistent with the speed-modifying gameplay mods (timewarp)!" + Environment.NewLine);
+            }
 
             var keyPressIntervals = calcPressIntervals();
 
-            double averageKeyPressTime = (Utils.median(keyPressIntervals) / multiplier);
-            sb.AppendLine("Median Key press time interval = " + averageKeyPressTime.ToString("0.00") + "ms");
-            sb.AppendLine("Min Key press time interval = " + (keyPressIntervals.Min() / multiplier).ToString("0.00") + "ms");
+            double averageKeyPressTime = Utils.median(keyPressIntervals) / multiplier;
+            sb.AppendLine($"Median Key press time interval: {averageKeyPressTime:0.00}ms");
+            sb.AppendLine($"Min Key press time interval: {keyPressIntervals.Min() / multiplier:0.00}ms");
+
             if (averageKeyPressTime < 30)
             {
                 sb.AppendLine("WARNING! Average Key press time interval is inhumanly low (timewarp/relax)!");
             }
-            sb.AppendLine("Extra hits = " + extraHits.Count);
+
+            sb.AppendLine($"Extra hits: {extraHits.Count}");
 
             if (replay.Mods.HasFlag(Mods.NoFail))
             {
-                sb.AppendLine("Pass = " + replay.IsPass());
+                sb.AppendLine($"Pass: {replay.IsPass()}");
             }
 
             return sb;
@@ -578,12 +564,12 @@ namespace osuDodgyMomentsFinder
 
         public StringBuilder CursorInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("Cursor movement Info");
 
             var cursorAcceleration = accelerationList();
-            sb.AppendLine("Cursor acceleration mean = " + cursorAcceleration.Average());
-            sb.AppendLine("Cursor acceleration variance = " + Utils.variance(cursorAcceleration));
+            sb.AppendLine($"Cursor acceleration mean: {cursorAcceleration.Average()}");
+            sb.AppendLine($"Cursor acceleration variance: {Utils.variance(cursorAcceleration)}");
 
             return sb;
         }
@@ -591,94 +577,108 @@ namespace osuDodgyMomentsFinder
 
         public StringBuilder PixelPerfectRawData()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             var pixelPerfectHits = findAllPixelHits();
+
             foreach (var hit in pixelPerfectHits)
             {
                 sb.Append(hit).Append(',');
             }
+
             return sb;
         }
 
         public StringBuilder TimeFramesRawData()
         {
-            StringBuilder sb = new StringBuilder();
-            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.TimeDiff).Where((x) => x > 0);
-            foreach (var frame in timeFrames)
+            var sb = new StringBuilder();
+            var timeFrames = replay.ReplayFrames.ConvertAll(x => x.TimeDiff).Where(x => x > 0);
+
+            foreach (int frame in timeFrames)
             {
                 sb.Append(frame).Append(',');
             }
+
             return sb;
         }
 
         public StringBuilder TravelledDistanceDiffRawData()
         {
-            StringBuilder sb = new StringBuilder();
-            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.travelledDistanceDiff);
-            foreach (var frame in timeFrames)
+            var sb = new StringBuilder();
+            var timeFrames = replay.ReplayFrames.ConvertAll(x => x.travelledDistanceDiff);
+
+            foreach (double frame in timeFrames)
             {
                 sb.Append(frame).Append(',');
             }
+
             return sb;
         }
 
         public StringBuilder SpeedRawData()
         {
-            StringBuilder sb = new StringBuilder();
-            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.speed);
-            foreach (var frame in timeFrames)
+            var sb = new StringBuilder();
+            var timeFrames = replay.ReplayFrames.ConvertAll(x => x.speed);
+
+            foreach (double frame in timeFrames)
             {
                 sb.Append(frame).Append(',');
             }
+
             return sb;
         }
 
         public StringBuilder AccelerationRawData()
         {
-            StringBuilder sb = new StringBuilder();
-            var timeFrames = this.replay.ReplayFrames.ConvertAll((x) => x.acceleration);
-            foreach (var frame in timeFrames)
+            var sb = new StringBuilder();
+            var timeFrames = replay.ReplayFrames.ConvertAll(x => x.acceleration);
+
+            foreach (double frame in timeFrames)
             {
                 sb.Append(frame).Append(',');
             }
+
             return sb;
         }
 
         public StringBuilder HitErrorRawData()
         {
-            StringBuilder sb = new StringBuilder();
-            var timeFrames = this.hits.ConvertAll((x) => x.note.StartTime - x.frame.Time);
-            foreach (var frame in timeFrames)
+            var sb = new StringBuilder();
+            var timeFrames = hits.ConvertAll(x => x.note.StartTime - x.frame.Time);
+
+            foreach (float frame in timeFrames)
             {
                 sb.Append(frame).Append(',');
             }
+
             return sb;
         }
 
         public StringBuilder PressKeyIntevalsRawData()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             var timeFrames = calcPressIntervals();
-            foreach (var frame in timeFrames)
+
+            foreach (double frame in timeFrames)
             {
                 sb.Append(frame).Append(',');
             }
+
             return sb;
         }
 
         public StringBuilder PixelPerfectInfo()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("PIXEL PERFECT");
+            var sb = new StringBuilder();
+            sb.AppendLine("- [PIXEL PERFECTS]:");
 
             var pixelHits = findAllPixelHits();
-            var values = pixelHits.Select((x) => x.Perfectness).ToList();
-            double bestPxPerfect = pixelHits.Max((a) => a.Perfectness);
-            sb.AppendLine("The best pixel perfect hit = " + bestPxPerfect);
-            double median = Utils.Median(values);
+            var values = pixelHits.Select(x => x.Perfectness).ToList();
+            double bestPxPerfect = pixelHits.Max(a => a.Perfectness);
+            sb.AppendLine($"The best pixel perfect hit: {bestPxPerfect}");
+            double median = values.Median();
             double variance = Utils.variance(values);
-            sb.AppendLine("Median pixel perfect hit = " + median);
-            sb.AppendLine("Perfectness variance = " + variance);
+            sb.AppendLine($"Median pixel perfect hit: {median}");
+            sb.AppendLine($"Perfectness variance: {variance}");
 
             if (bestPxPerfect < 0.5 || variance < 0.01 || median < 0.2)
             {
@@ -686,21 +686,20 @@ namespace osuDodgyMomentsFinder
                 sb.AppendLine();
             }
 
-            var pixelperfectHits = pixelHits.Where((x) => x.Perfectness > 0.98);
+            var pixelperfectHits = pixelHits.Where(x => x.Perfectness > 0.98);
+            var hitFrames = pixelperfectHits as HitFrame[] ?? pixelperfectHits.ToArray();
+            sb.AppendLine($"Pixel perfect hits: {hitFrames.Length}");
 
-            sb.AppendLine("Pixel perfect hits: " + pixelperfectHits.Count());
-
-            foreach(var hit in pixelperfectHits)
+            foreach (var hit in hitFrames)
             {
-                sb.AppendLine("* " + hit);
+                sb.AppendLine($"* {hit}");
             }
 
-            var LOLpixelPerfectHits = pixelperfectHits.Where((x) => x.Perfectness > 0.99);
+            var unrealisticPixelPerfects = hitFrames.Where(x => x.Perfectness > 0.99);
 
-            if(LOLpixelPerfectHits.Count() > 15)
+            if (unrealisticPixelPerfects.Count() > 15)
             {
-                sb.AppendLine("WARNING! Player is constantly doing pixel perfect hits (relax)");
-                sb.AppendLine();
+                sb.AppendLine("WARNING! Player is constantly doing pixel perfect hits (relax)" + Environment.NewLine);
             }
 
             return sb;
@@ -708,15 +707,15 @@ namespace osuDodgyMomentsFinder
 
         public StringBuilder OveraimsInfo()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("OVER-AIM");
+            var sb = new StringBuilder();
+            sb.AppendLine("- [OVER-AIM]:");
 
             var overAims = findOverAimHits();
-            sb.AppendLine("Over-aim count: " + overAims.Count);
+            sb.AppendLine($"Over-aim count: {overAims.Count}");
 
-            foreach(var hit in overAims)
+            foreach (var hit in overAims)
             {
-                sb.AppendLine("* " + hit.ToString());
+                sb.AppendLine($"* {hit}");
             }
 
             return sb;
@@ -724,15 +723,15 @@ namespace osuDodgyMomentsFinder
 
         public StringBuilder TeleportsInfo()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Cursor teleports");
+            var sb = new StringBuilder();
+            sb.AppendLine("- [CURSOR TELEPORTS]:");
 
             var teleports = findCursorTeleports();
-            sb.AppendLine("Teleports count: " + teleports.Count);
+            sb.AppendLine($"Teleport count: {teleports.Count}");
 
             foreach (var frame in teleports)
             {
-                sb.AppendLine("* " + frame.Time + "ms " + frame.travelledDistanceDiff + "px");
+                sb.AppendLine($"* {frame.Time}ms {frame.travelledDistanceDiff}px");
             }
 
             return sb;
@@ -740,11 +739,9 @@ namespace osuDodgyMomentsFinder
 
         public StringBuilder ExtraHitsInfo()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Extra hits");
-
-            var teleports = findCursorTeleports();
-            sb.AppendLine("Extra hits count: " + extraHits.Count);
+            var sb = new StringBuilder();
+            sb.AppendLine("- [EXTRA HITS]");
+            sb.AppendLine($"Extra hits count: {extraHits.Count}");
 
             foreach (var frame in extraHits)
             {
@@ -756,14 +753,13 @@ namespace osuDodgyMomentsFinder
 
         public StringBuilder EffortlessMissesInfo()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Effortless misses");
-
-            sb.AppendLine("Effortless misses count: " + effortlessMisses.Count);
+            var sb = new StringBuilder();
+            sb.AppendLine("- [EFFORTLESS MISSES]");
+            sb.AppendLine($"Effortless misses count: {effortlessMisses.Count}");
 
             foreach (var note in effortlessMisses)
             {
-                sb.AppendLine(note.ToString() + " missed without a corresponding hit");
+                sb.AppendLine($"{note} missed without a corresponding hit");
             }
 
             return sb;
@@ -771,16 +767,17 @@ namespace osuDodgyMomentsFinder
 
         public StringBuilder SingletapsInfo()
         {
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
             sb.AppendLine("Singletaps");
 
             var singletaps = checkTappingConsistency();
-            sb.AppendLine("Fast singletaps count: " + singletaps.Count);
+            sb.AppendLine($"Fast singletaps count: {singletaps.Count}");
 
             foreach (var frame in singletaps)
             {
-                sb.AppendLine("* Object at " + frame.Key.note.StartTime + "ms "  + frame.Key.key + " singletapped with next at " + frame.Value.note.StartTime + " (" + (frame.Value.frame.Time - frame.Key.frame.Time) / multiplier + "ms real frame time diff) " + " " + (frame.Key.frame.Time - frame.Key.note.StartTime) + "ms and " + (frame.Value.frame.Time - frame.Value.note.StartTime) + "ms error. ");
+                sb.AppendLine($"* Object at {frame.Key.note.StartTime}ms {frame.Key.key} singletapped with next at {frame.Value.note.StartTime} ({(frame.Value.frame.Time - frame.Key.frame.Time) / multiplier}ms real frame time diff) - {frame.Key.frame.Time - frame.Key.note.StartTime}ms and {frame.Value.frame.Time - frame.Value.note.StartTime}ms error.");
             }
+
             return sb;
         }
 

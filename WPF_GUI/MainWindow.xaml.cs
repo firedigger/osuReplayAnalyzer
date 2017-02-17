@@ -1,37 +1,41 @@
-﻿using BMAPI.v1;
-using Microsoft.Win32;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Threading;
 using osuDodgyMomentsFinder;
 using ReplayAPI;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Text;
-using System.Windows;
+using WPF_GUI;
+using Application = System.Windows.Application;
+using Beatmap = BMAPI.v1.Beatmap;
+using MessageBox = System.Windows.MessageBox;
 using WinForms = System.Windows.Forms;
 using osuDatabase = OsuDbAPI;
-using System.Diagnostics;
-using System.Threading.Tasks;
-using System.Windows.Threading;
+using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
+using SaveFileDialog = Microsoft.Win32.SaveFileDialog;
 
-namespace WPF_GUI
+namespace GUI
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow : Window
-	{
-		private List<Replay> listReplays;
-		private Dictionary<string, string> dMapsDatabase;
-		private MainControlFrame settings;
+    /// <summary>
+    /// Interaction logic for MainWindow.xaml
+    /// </summary>
+    public partial class MainWindow
+    {
+        private List<Replay> listReplays;
+        private Dictionary<string, string> dMapsDatabase;
+        private readonly MainControlFrame settings;
 
-		private string sCachedLabelText = string.Empty;
-		private string osuFilePath = string.Empty;
-		//private string osuReplaysPath = string.Empty;
+        private string osuFilePath = string.Empty;
+        //private string osuReplaysPath = string.Empty;
 
-		public MainWindow()
-		{
-			listReplays = new List<Replay>();
-			dMapsDatabase = new Dictionary<string, string>();
+        public MainWindow()
+        {
+            listReplays = new List<Replay>();
+            dMapsDatabase = new Dictionary<string, string>();
             settings = new MainControlFrame();
 
             try
@@ -50,50 +54,52 @@ namespace WPF_GUI
             }
             catch (Exception exp)
             {
-                MessageBox.Show("Error!\n" + exp.ToString());
+                MessageBox.Show("Error!\n" + exp);
             }
-		}
+        }
 
-		private void button_ChooseReplays_Click(object sender, RoutedEventArgs e)
-		{
-			OpenFileDialog replayFileDialog = new OpenFileDialog();
-			replayFileDialog.Multiselect = true;
-			replayFileDialog.Filter = "osu! replay files|*.osr";
+        private void button_ChooseReplays_Click(object sender, RoutedEventArgs e)
+        {
+            var replayFileDialog = new OpenFileDialog
+            {
+                Multiselect = true,
+                Filter = "osu! replay files|*.osr"
+            };
             if (!string.IsNullOrEmpty(settings.pathOsuDB))
                 replayFileDialog.InitialDirectory = settings.pathOsuDB;
             if (!string.IsNullOrEmpty(settings.pathReplays))
                 replayFileDialog.InitialDirectory = settings.pathReplays;
 
-			if(replayFileDialog.ShowDialog() ?? true)
-			{
-				bool bErrors = false;
-				listReplays = new List<Replay>();
+            if (replayFileDialog.ShowDialog() ?? true)
+            {
+                bool bErrors = false;
+                listReplays = new List<Replay>();
 
-				string log = string.Empty;
+                string log = string.Empty;
 
-				foreach(var replayFile in replayFileDialog.FileNames)
-				{
-					try
-					{
-						listReplays.Add(new Replay(replayFile, true, true));
-					}
+                foreach (var replayFile in replayFileDialog.FileNames)
+                {
+                    try
+                    {
+                        listReplays.Add(new Replay(replayFile, true, true));
+                    }
 
-					catch(Exception ex)
-					{
-						if(!bErrors)
-						{
-							log = "Some of the replays could not be read:" + Environment.NewLine;
-						}
+                    catch (Exception ex)
+                    {
+                        if (!bErrors)
+                        {
+                            log = "Some of the replays could not be read:" + Environment.NewLine;
+                        }
 
-						log += string.Format("Failed to process {0} ({1}){2}", replayFile, ex.Message, Environment.NewLine);
+                        log += $"Failed to process {replayFile} ({ex.Message}){Environment.NewLine}";
 
-						bErrors = true;
-					}
-				}
+                        bErrors = true;
+                    }
+                }
 
-				if(!bErrors)
-				{
-					log = "All replays were successfully read!";
+                if (!bErrors)
+                {
+                    log = "All replays were successfully read!";
                     if (replayFileDialog.FileNames.Length > 0)
                     {
                         string directoryName = Path.GetDirectoryName(replayFileDialog.FileNames[0]);
@@ -103,72 +109,71 @@ namespace WPF_GUI
                     }
                 }
 
-				MessageBox.Show(log);
-			}
-		}
+                MessageBox.Show(log);
+            }
+        }
 
-		private void button_ChooseFolder_Click(object sender, RoutedEventArgs e)
-		{
-			WinForms.FolderBrowserDialog replayFolderDialog = new WinForms.FolderBrowserDialog();
+        private void button_ChooseFolder_Click(object sender, RoutedEventArgs e)
+        {
+            WinForms.FolderBrowserDialog replayFolderDialog = new WinForms.FolderBrowserDialog();
 
-			if(replayFolderDialog.ShowDialog() == WinForms.DialogResult.OK)
-			{
-				settings.pathReplays = replayFolderDialog.SelectedPath;
-			}
-		}
+            if (replayFolderDialog.ShowDialog() == WinForms.DialogResult.OK)
+            {
+                settings.pathReplays = replayFolderDialog.SelectedPath;
+            }
+        }
 
-		private void button_ChooseMap_Click(object sender, RoutedEventArgs e)
-		{
-			OpenFileDialog osuFileDialog = new OpenFileDialog();
-			osuFileDialog.Filter = "osu! beatmap file|*.osu";
+        private void button_ChooseMap_Click(object sender, RoutedEventArgs e)
+        {
+            var osuFileDialog = new OpenFileDialog {Filter = "osu! beatmap file|*.osu"};
 
-			if(osuFileDialog.ShowDialog() ?? true)
-			{
-				osuFilePath = osuFileDialog.FileName;
-			}
-		}
+            if (osuFileDialog.ShowDialog() ?? true)
+            {
+                osuFilePath = osuFileDialog.FileName;
+            }
+        }
 
-		private Beatmap FindBeatmapInDatabase(Replay replay)
-		{
-			Beatmap beatMap = null;
+        private Beatmap FindBeatmapInDatabase(Replay replay)
+        {
+            Beatmap beatMap = null;
 
-			if(!string.IsNullOrEmpty(osuFilePath))
-			{
-				beatMap = new Beatmap(osuFilePath);
-			}
+            if (!string.IsNullOrEmpty(osuFilePath))
+            {
+                beatMap = new Beatmap(osuFilePath);
+            }
 
-			if(!ReferenceEquals(beatMap,null) && replay.MapHash.Equals(beatMap.BeatmapHash))
-			{
-				return beatMap;
-			}
+            if (!ReferenceEquals(beatMap, null) && replay.MapHash.Equals(beatMap.BeatmapHash))
+            {
+                return beatMap;
+            }
 
-			else
-			{
-				if(dMapsDatabase.ContainsKey(replay.MapHash))
-				{
-					return new Beatmap(dMapsDatabase[replay.MapHash]);
-				}
-				else
-				{
-					return null;
-				}
-			}
-		}
+            else
+            {
+                if (dMapsDatabase.ContainsKey(replay.MapHash))
+                {
+                    return new Beatmap(dMapsDatabase[replay.MapHash]);
+                }
+                else
+                {
+                    return null;
+                }
+            }
+        }
 
         private void doOnUIThread(Action a)
         {
             Application.Current.Dispatcher.BeginInvoke(DispatcherPriority.Background, a);
         }
 
-		private void button_AnalyzeReplays_Click(object sender, RoutedEventArgs e)
-		{
-			Beatmap beatMap = null;
-			StringBuilder sb = new StringBuilder();
+        private void button_AnalyzeReplays_Click(object sender, RoutedEventArgs e)
+        {
+            Beatmap beatMap = null;
+            StringBuilder sb = new StringBuilder();
 
             labelTask.Content = "Analyzing replays...";
             progressBar_Analyzing.Value = 0;
 
-            bool onlyMainInfo = onlyMainInfo_checkbox.IsChecked.Value;
+            bool onlyMainInfo = onlyMainInfo_checkbox.IsChecked != null && onlyMainInfo_checkbox.IsChecked.Value;
 
             var tasks = new List<Task>();
 
@@ -178,7 +183,7 @@ namespace WPF_GUI
 
                 foreach (Replay replay in listReplays)
                 {
-                    var a = Task.Run(() => 
+                    var a = Task.Run(() =>
                     {
                         beatMap = FindBeatmapInDatabase(replay);
 
@@ -188,18 +193,12 @@ namespace WPF_GUI
                         {
                             found = true;
 
-                            //doOnUIThread(() => MessageBox.Show(onlyMainInfo_checkbox.IsChecked.Value.ToString()));
-
-                            //doOnUIThread(() => MessageBox.Show(Program.ReplayAnalyzing(beatMap, replay, onlyMainInfo_checkbox.IsChecked.Value).ToString()));
-                            
-                            //bool onlyMainInfo = false;
                             newLine = Program.ReplayAnalyzing(beatMap, replay, onlyMainInfo).ToString();
-                            //newLine = Program.ReplayAnalyzing(beatMap, replay).ToString();
-                            //doOnUIThread(() => MessageBox.Show("DONE"));
                         }
+
                         else
                         {
-                            newLine = string.Format("{0} does not correspond to any known map", replay.Filename);
+                            newLine = $"{replay.Filename} does not correspond to any known map";
                         }
 
                         lock (sb)
@@ -212,10 +211,10 @@ namespace WPF_GUI
                     tasks.Add(a);
                 }
 
-                Task.Run(() => 
+                Task.Run(() =>
                 {
                     Task.WaitAll(tasks.ToArray());
-                    doOnUIThread(() => 
+                    doOnUIThread(() =>
                     {
                         labelTask.Content = "Finished analyzing replays.";
                         SaveResult(sb);
@@ -231,323 +230,305 @@ namespace WPF_GUI
                 MessageBox.Show("Error! No replays selected.");
             }
 
-		}
+        }
 
-		private void ParseDatabaseFile(string databasePath, string songsFolder)
-		{
+        private void ParseDatabaseFile(string databasePath, string songsFolder)
+        {
             try
             {
-                osuDatabase.OsuDbFile osuDatabase = new osuDatabase.OsuDbFile(databasePath);
+                var osuDatabase = new osuDatabase.OsuDbFile(databasePath);
 
                 labelTask.Content = "Processing beatmaps from database...";
 
-                Dictionary<string, string> dTempDatabase = new Dictionary<string, string>();
+                var dTempDatabase = new Dictionary<string, string>();
 
                 int iQueue = 0;
 
-                foreach (osuDatabase.Beatmap beatMap in osuDatabase.Beatmaps)
+                foreach (var beatMap in osuDatabase.Beatmaps)
                 {
                     progressBar_Analyzing.Value = (100.0 / osuDatabase.Beatmaps.Count) * iQueue++;
 
-                    osuDatabase.Beatmap dbBeatmap = beatMap;
+                    var dbBeatmap = beatMap;
 
-                    if (!ReferenceEquals(dbBeatmap,null) && !string.IsNullOrEmpty(dbBeatmap.Hash))
-                    {
-                        string beatmapPath = string.Format("{0}\\{1}\\{2}", songsFolder, dbBeatmap.FolderName, dbBeatmap.OsuFile);
-                        if(!dTempDatabase.ContainsKey(dbBeatmap.Hash))
-                                dTempDatabase.Add(dbBeatmap.Hash, beatmapPath);
-                    }
+                    if (ReferenceEquals(dbBeatmap, null) || string.IsNullOrEmpty(dbBeatmap.Hash)) continue;
+                    var beatmapPath = $"{songsFolder}\\{dbBeatmap.FolderName}\\{dbBeatmap.OsuFile}";
+                    if (!dTempDatabase.ContainsKey(dbBeatmap.Hash))
+                        dTempDatabase.Add(dbBeatmap.Hash, beatmapPath);
                 }
 
                 progressBar_Analyzing.Value = 100.0;
                 dMapsDatabase = dTempDatabase;
 
                 labelTask.Content = "Finished processing beatmaps from osuDB.";
-            } catch (Exception exp)
-            {
-                MessageBox.Show("Error reading osuDB \n" + exp.ToString());
             }
-		}
+            catch (Exception exp)
+            {
+                MessageBox.Show("Error reading osuDB \n" + exp);
+            }
+        }
 
         private void showInReportDialogue(string s)
         {
-            ReportDialog dialog = new ReportDialog();
-            dialog.textBox_Results.Text = s;
-            dialog.textBox_Results.HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Disabled;
-            dialog.textBox_Results.VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto;
+            var dialog = new ReportDialog("Results")
+            {
+                textBox_Results =
+                {
+                    Text = s,
+                    HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Disabled,
+                    VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto
+                },
+
+                Owner = GetWindow(this)
+            };
+
             dialog.Show();
         }
 
-		private void SaveResult(StringBuilder sb)
-		{
-			// remove whitespaces
-			string sTemp = sb.ToString();
-			sTemp = sTemp.Trim();
-			sb = new StringBuilder(sTemp);
+        private void SaveResult(StringBuilder sb)
+        {
+            // remove whitespaces
+            string sTemp = sb.ToString();
+            sTemp = sTemp.Trim();
+            sb = new StringBuilder(sTemp);
 
-			if(checkBox_SaveToFile.IsChecked ?? true)
-			{
-				SaveFileDialog saveReportDialog = new SaveFileDialog();
-				saveReportDialog.FileName = "Report " + DateTime.Now.ToString("MMMM dd, yyyy H-mm-ss") + ".txt";
-				saveReportDialog.Filter = "All Files|*.*;";
+            if (checkBox_SaveToFile.IsChecked ?? true)
+            {
+                var saveReportDialog = new SaveFileDialog
+                {
+                    FileName = "Report " + DateTime.Now.ToString("MMMM dd, yyyy H-mm-ss") + ".txt",
+                    Filter = "All Files|*.*;"
+                };
 
-				if(saveReportDialog.ShowDialog() ?? true)
-				{
-					File.WriteAllText(saveReportDialog.FileName, sb.ToString());
-				}
-			}
+                if (saveReportDialog.ShowDialog() ?? true)
+                {
+                    File.WriteAllText(saveReportDialog.FileName, sb.ToString());
+                }
+            }
 
-			if(checkBox_AlertOutput.IsChecked ?? true)
-			{
+            if (checkBox_AlertOutput.IsChecked ?? true)
+            {
                 showInReportDialogue(sb.ToString());
-			}
-		}
+            }
+        }
 
-		private void button_OpenDatabase_Click(object sender, RoutedEventArgs e)
-		{
-			OpenFileDialog osuFileDialog = new OpenFileDialog();
-			osuFileDialog.Filter = "osu! database file|osu!.db";
-			osuFileDialog.Multiselect = false;
+        private void button_OpenDatabase_Click(object sender, RoutedEventArgs e)
+        {
+            var osuFileDialog = new OpenFileDialog
+            {
+                Filter = "osu! database file|osu!.db",
+                Multiselect = false
+            };
 
-			if(osuFileDialog.ShowDialog() ?? true)
-			{
-				settings.pathOsuDB = osuFileDialog.FileName;
-				MessageBox.Show("Now select Songs folder.");
+            if(!(osuFileDialog.ShowDialog() ?? true)) return;
 
-				WinForms.FolderBrowserDialog songsFolderDialogue = new WinForms.FolderBrowserDialog();
-				songsFolderDialogue.SelectedPath = Path.GetDirectoryName(osuFileDialog.FileName);
+            settings.pathOsuDB = osuFileDialog.FileName;
+            MessageBox.Show("Now select Songs folder.");
 
-				if(songsFolderDialogue.ShowDialog() == WinForms.DialogResult.OK)
-				{
-					settings.pathSongs = songsFolderDialogue.SelectedPath;
-					ParseDatabaseFile(osuFileDialog.FileName, songsFolderDialogue.SelectedPath);
-				}
-			}
-		}
+            var songsFolderDialogue = new WinForms.FolderBrowserDialog
+            {
+                SelectedPath = Path.GetDirectoryName(osuFileDialog.FileName)
+            };
 
-		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
-		{
-			settings.saveSettings();
-		}
+            if(songsFolderDialogue.ShowDialog() != WinForms.DialogResult.OK) return;
 
-		private void button_AnalyzeFolder_Click(object sender, RoutedEventArgs e)
-		{
-			StringBuilder sb = new StringBuilder();
-			Dictionary<Beatmap, Replay> pairs = new Dictionary<Beatmap, Replay>();
+            settings.pathSongs = songsFolderDialogue.SelectedPath;
+            ParseDatabaseFile(osuFileDialog.FileName, songsFolderDialogue.SelectedPath);
+        }
 
-			labelTask.Content = "Analyzing replays in folder...";
-			try
-			{
-				DirectoryInfo directory = new DirectoryInfo(settings.pathReplays);
-				FileInfo[] files = directory.GetFiles();
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            settings.saveSettings();
+        }
 
-				List<string> replaysFiles = new List<string>();
+        private void button_AnalyzeFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var sb = new StringBuilder();
 
-				foreach(FileInfo file in files)
-				{
-					if(file.Extension == ".osr")
-					{
-						replaysFiles.Add(file.FullName);
-					}
-				}
+            labelTask.Content = "Analyzing replays in folder...";
 
-				progressBar_Analyzing.Value = 0.0;
+            try
+            {
+                var directory = new DirectoryInfo(settings.pathReplays);
+                var files = directory.GetFiles();
 
-				List<Replay> replays = new List<Replay>();
-				int iQueue = 0;
+                var replaysFiles = (from file in files where file.Extension == ".osr" select file.FullName).ToList();
 
-				foreach(string file in replaysFiles)
-				{
-					progressBar_Analyzing.Value = (100.0 / replaysFiles.Count) * iQueue++;
+                progressBar_Analyzing.Value = 0.0;
 
-					string path = file;
-					Replay replay = new Replay(path, true, true);
-					Beatmap map = FindBeatmapInDatabase(replay);
-					sb.AppendLine(Program.ReplayAnalyzing(map, replay, onlyMainInfo_checkbox.IsChecked.Value).ToString());
-				}
-			}
-			catch(Exception exp)
-			{
-				MessageBox.Show(exp.ToString());
-			}
+                int iQueue = 0;
 
-			finally
-			{
-				progressBar_Analyzing.Value = 100.0;
-				labelTask.Content = "Finished analyzing replays in folder...";
+                foreach (string file in replaysFiles)
+                {
+                    progressBar_Analyzing.Value = (100.0 / replaysFiles.Count) * iQueue++;
 
-				SaveResult(sb);
-			}
-		}
+                    string path = file;
+                    Replay replay = new Replay(path, true, true);
+                    Beatmap map = FindBeatmapInDatabase(replay);
+                    sb.AppendLine(Program.ReplayAnalyzing(map, replay, onlyMainInfo_checkbox.IsChecked != null && onlyMainInfo_checkbox.IsChecked.Value).ToString());
+                }
+            }
 
-		private StringBuilder AvsBReplaysCompare(List<Replay> replaysA, List<Replay> replaysB)
-		{
-			StringBuilder sb = new StringBuilder();
+            catch (Exception exp)
+            {
+                MessageBox.Show(exp.ToString());
+            }
 
-			labelTask.Content = "Comparing replays...";
-			progressBar_Analyzing.Value = 0.0;
+            finally
+            {
+                progressBar_Analyzing.Value = 100.0;
+                labelTask.Content = "Finished analyzing replays in folder...";
 
-			int iQueue = 0;
-			int iCount = replaysA.Count * replaysB.Count;
+                SaveResult(sb);
+            }
+        }
 
-			foreach(Replay replayA in replaysA)
-			{
-				foreach(Replay replayB in replaysB)
-				{
-					ReplayComparator comparator = new ReplayComparator(replayA, replayB);
-					double diff = comparator.compareReplays();
+        private StringBuilder AvsBReplaysCompare(List<Replay> replaysA, List<Replay> replaysB)
+        {
+            var sb = new StringBuilder();
 
-					if(diff < 10.0)
-					{
-						sb.Append("IDENTICAL REPLAY PAIR: ");
-					}
+            labelTask.Content = "Comparing replays...";
+            progressBar_Analyzing.Value = 0.0;
 
-					sb.AppendLine(string.Format("{0} vs. {1} = {2}", replayA.Filename, replayB.Filename, diff));
+            int iQueue = 0;
+            int iCount = replaysA.Count * replaysB.Count;
 
-					progressBar_Analyzing.Value = (100.0 / iCount) * iQueue++;
-				}
-			}
+            foreach (Replay replayA in replaysA)
+            {
+                foreach (Replay replayB in replaysB)
+                {
+                    ReplayComparator comparator = new ReplayComparator(replayA, replayB);
+                    double diff = comparator.compareReplays();
 
-			progressBar_Analyzing.Value = 100.0;
-			labelTask.Content = "Finished comparing replays.";
+                    if (diff < 10.0)
+                    {
+                        sb.Append("IDENTICAL REPLAY PAIR: ");
+                    }
 
-			return sb;
-		}
+                    sb.AppendLine($"{replayA.Filename} vs. {replayB.Filename} = {diff}");
 
-		private StringBuilder AllVSReplaysCompare(List<Replay> replays)
-		{
-			StringBuilder sb = new StringBuilder();
+                    progressBar_Analyzing.Value = (100.0 / iCount) * iQueue++;
+                }
+            }
 
-			labelTask.Content = "Comparing replays...";
-			progressBar_Analyzing.Value = 0.0;
+            progressBar_Analyzing.Value = 100.0;
+            labelTask.Content = "Finished comparing replays.";
 
-			int iFirstQueue = 0;
-			int iQueue = 0;
-			int count = replays.Count * (replays.Count - 1) / 2;
+            return sb;
+        }
 
-			foreach(Replay replayA in replays)
-			{
-				for(int i = iFirstQueue + 1; i < replays.Count; i++)
-				{
-					if(replayA.ReplayHash == replays[i].ReplayHash)
-					{
-						continue;
-					}
+        private StringBuilder AllVSReplaysCompare(List<Replay> replays)
+        {
+            var sb = new StringBuilder();
 
-					ReplayComparator comparator = new ReplayComparator(replayA, replays[i]);
-					double diff = comparator.compareReplays();
+            labelTask.Content = "Comparing replays...";
+            progressBar_Analyzing.Value = 0.0;
 
-					if(diff < 10.0)
-					{
-						sb.Append("IDENTICAL REPLAY PAIR: ");
-					}
+            int iFirstQueue = 0;
+            int iQueue = 0;
+            int count = replays.Count * (replays.Count - 1) / 2;
 
-					sb.AppendLine(string.Format("{0} vs. {1} = {2}", replayA.Filename, replays[i].Filename, diff));
-					progressBar_Analyzing.Value = (100.0 / count) * iQueue++;
-				}
+            foreach (var replayA in replays)
+            {
+                for (int i = iFirstQueue + 1; i < replays.Count; i++)
+                {
+                    if (replayA.ReplayHash == replays[i].ReplayHash)
+                    {
+                        continue;
+                    }
 
-				iFirstQueue++;
-			}
+                    var comparator = new ReplayComparator(replayA, replays[i]);
+                    double diff = comparator.compareReplays();
 
-			progressBar_Analyzing.Value = 100.0;
-			labelTask.Content = "Finished comparing replays.";
+                    if (diff < 10.0)
+                    {
+                        sb.Append("IDENTICAL REPLAY PAIR: ");
+                    }
 
-			return sb;
-		}
+                    sb.AppendLine($"{replayA.Filename} vs. {replays[i].Filename} = {diff}");
+                    progressBar_Analyzing.Value = (100.0 / count) * iQueue++;
+                }
 
-		private void button_CompareSelected_Click(object sender, RoutedEventArgs e)
-		{
-			SaveResult(AllVSReplaysCompare(listReplays));
-		}
+                iFirstQueue++;
+            }
 
-		private void button_CompareFolder_Click(object sender, RoutedEventArgs e)
-		{
-			StringBuilder sb = new StringBuilder();
+            progressBar_Analyzing.Value = 100.0;
+            labelTask.Content = "Finished comparing replays.";
 
-			Dictionary<Beatmap, Replay> pairs = new Dictionary<Beatmap, Replay>();
-			DirectoryInfo directory = new DirectoryInfo(settings.pathReplays);
-			FileInfo[] files = directory.GetFiles();
+            return sb;
+        }
 
-			List<string> replaysFiles = new List<string>();
+        private void button_CompareSelected_Click(object sender, RoutedEventArgs e)
+        {
+            SaveResult(AllVSReplaysCompare(listReplays));
+        }
 
-			foreach(FileInfo file in files)
-			{
-				if(file.Extension == ".osr")
-				{
-					replaysFiles.Add(file.FullName);
-				}
-			}
+        private void button_CompareFolder_Click(object sender, RoutedEventArgs e)
+        {
+            var sb = new StringBuilder();
+            var directory = new DirectoryInfo(settings.pathReplays);
+            var files = directory.GetFiles();
+            var replaysFiles = (from file in files where file.Extension == ".osr" select file.FullName).ToList();
 
-			labelTask.Content = "Comparing replays in folder...";
-			progressBar_Analyzing.Value = 0.0;
+            labelTask.Content = "Comparing replays in folder...";
+            progressBar_Analyzing.Value = 0.0;
 
-			List<Replay> replays = new List<Replay>();
+            var replays = new List<Replay>();
 
-			int iQueue = 0;
+            int iQueue = 0;
 
-			foreach(string path in replaysFiles)
-			{
-				try
-				{
-					progressBar_Analyzing.Value = (100.0 / replaysFiles.Count) * iQueue++;
+            foreach (string path in replaysFiles)
+            {
+                try
+                {
+                    progressBar_Analyzing.Value = (100.0 / replaysFiles.Count) * iQueue++;
 
-					Replay replay = new Replay(path, true, true);
-					replays.Add(replay);
-				}
+                    Replay replay = new Replay(path, true, true);
+                    replays.Add(replay);
+                }
 
-				catch(Exception ex)
-				{
-					sb.AppendLine(string.Format("Failed to process {0} ({1})", path, ex.Message));
-				}
-			}
+                catch (Exception ex)
+                {
+                    sb.AppendLine($"Failed to process {path} ({ex.Message})");
+                }
+            }
 
-			progressBar_Analyzing.Value = 100.0;
-			labelTask.Content = "Finished comparing replays in folder.";
+            progressBar_Analyzing.Value = 100.0;
+            labelTask.Content = "Finished comparing replays in folder.";
 
-			SaveResult(new StringBuilder(sb.ToString() + AllVSReplaysCompare(replays).ToString()));
-		}
+            SaveResult(new StringBuilder(sb + AllVSReplaysCompare(replays).ToString()));
+        }
 
-		private void button_CompareSelectedAgainstFolder_Click(object sender, RoutedEventArgs e)
-		{
-			StringBuilder sb = new StringBuilder();
+        private void button_CompareSelectedAgainstFolder_Click(object sender, RoutedEventArgs e)
+        {
+            StringBuilder sb = new StringBuilder();
 
-			Dictionary<Beatmap, Replay> pairs = new Dictionary<Beatmap, Replay>();
-			DirectoryInfo directory = new DirectoryInfo(settings.pathReplays);
-			FileInfo[] files = directory.GetFiles();
+            var directory = new DirectoryInfo(settings.pathReplays);
+            var files = directory.GetFiles();
+            var replaysFiles = (from file in files where file.Extension == ".osr" select file.FullName).ToList();
 
-			List<string> replaysFiles = new List<string>();
+            progressBar_Analyzing.Value = 0;
+            var replays = new List<Replay>();
 
-			foreach(FileInfo file in files)
-			{
-				if(file.Extension == ".osr")
-				{
-					replaysFiles.Add(file.FullName);
-				}
-			}
+            int iQueue = 0;
 
-			progressBar_Analyzing.Value = 0;
-			List<Replay> replays = new List<Replay>();
+            foreach (string path in replaysFiles)
+            {
+                try
+                {
+                    progressBar_Analyzing.Value = (100.0 / replaysFiles.Count) * iQueue++;
 
-			int iQueue = 0;
+                    Replay replay = new Replay(path, true, true);
+                    replays.Add(replay);
+                }
 
-			foreach(string path in replaysFiles)
-			{
-				try
-				{
-					progressBar_Analyzing.Value = (100.0 / replaysFiles.Count) * iQueue++;
+                catch (Exception ex)
+                {
+                    sb.AppendLine($"Failed to process {path} ({ex.Message})");
+                }
+            }
 
-					Replay replay = new Replay(path, true, true);
-					replays.Add(replay);
-				}
-
-				catch(Exception ex)
-				{
-					sb.AppendLine(string.Format("Failed to process {0} ({1})", path, ex.Message));
-				}
-			}
-
-			SaveResult(new StringBuilder(sb.ToString() + AvsBReplaysCompare(listReplays, replays).ToString()));
-		}
+            SaveResult(new StringBuilder(sb + AvsBReplaysCompare(listReplays, replays).ToString()));
+        }
 
         private void rawData_button_Click(object sender, RoutedEventArgs e)
         {
@@ -555,7 +536,7 @@ namespace WPF_GUI
             progressBar_Analyzing.Value = 0;
             Task.Run(() =>
             {
-                
+
                 if (listReplays.Count > 0)
                 {
 
@@ -567,9 +548,11 @@ namespace WPF_GUI
 
                         doOnUIThread(() =>
                         {
-                            SaveFileDialog saveReportDialog = new SaveFileDialog();
-                            saveReportDialog.FileName = Path.GetFileName(replay.Filename) + ".RAW.txt";
-                            saveReportDialog.Filter = "All Files|*.*;";
+                            var saveReportDialog = new SaveFileDialog
+                            {
+                                FileName = Path.GetFileName(replay.Filename) + ".RAW.txt",
+                                Filter = "All Files|*.*;"
+                            };
 
                             if (saveReportDialog.ShowDialog() ?? true)
                             {
@@ -577,8 +560,6 @@ namespace WPF_GUI
                             }
                         });
                     }
-
-                    //doOnUIThread(() => progressBar_Analyzing.Value = 100.0);
                 }
                 else
                 {
@@ -591,11 +572,14 @@ namespace WPF_GUI
 
         private void openReplaysFolder_button_Click(object sender, RoutedEventArgs e)
         {
-            Process process = new Process();
-
-            process.StartInfo.UseShellExecute = true;
-
-            process.StartInfo.FileName = "explorer";
+            var process = new Process
+            {
+                StartInfo =
+                {
+                    UseShellExecute = true,
+                    FileName = "explorer"
+                }
+            };
 
             if (!string.IsNullOrEmpty(settings.pathReplays))
                 process.StartInfo.Arguments = settings.pathReplays;
@@ -605,8 +589,7 @@ namespace WPF_GUI
 
         private void rawFeatures_button_Click(object sender, RoutedEventArgs e)
         {
-            Beatmap beatMap = null;
-            StringBuilder sb = new StringBuilder();
+            var sb = new StringBuilder();
 
             labelTask.Content = "Collecting data from replays...";
 
@@ -615,13 +598,13 @@ namespace WPF_GUI
                 int iQueue = 0;
                 bool found = false;
 
-                foreach (Replay replay in listReplays)
+                foreach (var replay in listReplays)
                 {
-                    progressBar_Analyzing.Value = (100.0 / listReplays.Count) * iQueue++;
+                    progressBar_Analyzing.Value = 100.0 / listReplays.Count * iQueue++;
 
-                    beatMap = FindBeatmapInDatabase(replay);
+                    var beatMap = FindBeatmapInDatabase(replay);
 
-                    if (!ReferenceEquals(beatMap,null))
+                    if (!ReferenceEquals(beatMap, null))
                     {
                         found = true;
                         sb.AppendLine(Program.ReplayDataCollecting(beatMap, replay).ToString());
@@ -629,7 +612,7 @@ namespace WPF_GUI
 
                     else
                     {
-                        sb.AppendLine(string.Format("{0} does not correspond to any known map", replay.Filename));
+                        sb.AppendLine($"{replay.Filename} does not correspond to any known map");
                     }
                 }
 
@@ -640,15 +623,18 @@ namespace WPF_GUI
 
                 progressBar_Analyzing.Value = 100.0;
 
-                SaveFileDialog saveReportDialog = new SaveFileDialog();
-                saveReportDialog.FileName = "Data " + DateTime.Now.ToString("MMMM dd, yyyy H-mm-ss") + ".txt";
-                saveReportDialog.Filter = "All Files|*.*;";
+                var saveReportDialog = new SaveFileDialog
+                {
+                    FileName = "Data " + DateTime.Now.ToString("MMMM dd, yyyy H-mm-ss") + ".txt",
+                    Filter = "All Files|*.*;"
+                };
 
                 if (saveReportDialog.ShowDialog() ?? true)
                 {
                     File.WriteAllText(saveReportDialog.FileName, sb.ToString());
                 }
             }
+
             else
             {
                 MessageBox.Show("Error! No replays selected.");
@@ -664,7 +650,68 @@ namespace WPF_GUI
 
         private void help_button_Click(object sender, RoutedEventArgs e)
         {
-            showInReportDialogue("Welcome to osu!ReplayAnalyzer.\n This program is intended to analyze osu! replays and output relevant information, mostly targeted at witchhunter. The provided information can be used to determine the probability of legitness of a player.\nThe first thing you want to do after downloading and launching the app is Open osuDB, this will load your osu!beatmaps into the program. You'll only need to specify the path once, the program is going to remember the settings in a file and will load the DB automatically on startup next time.\nTerms description:\n1)Pixel perfect hit is a hit done on the edge on the note rather than its center. Originally, pixel perfect hits happened often when a player using relax was late on hitting a note. Strictly, pixel perfect hits are only the ones that are PERFECTLY on the edge. However, the term is generalized by measure of so-called perfectness for every hit. Mathematically it is the distance between the cursor and the center of the note divided by the radius of the note. It is a value from 0 (perfectly centered note hit) to 1 (pixel perfect edge note hit). Values more than 1 consequently correspond to so-called attempted hits, which are technically misses. High number of pixel perfect hits indicates poor aim and probably usage of relax hack.\n2)Over-aim is a hit which happened after the cursor hovered the note, left it and then hovered again. This is also an indicator of poor aim, FCing maps with such inconsistency is fairly hard, so a high number of such moments across the replays of a certain player would suggest that he/she's using relax.\n3)Cursor teleport is a large cursor movement within a single frame which has no derivative. This is equivalent to your intuitive definition of a teleport. Even though cursor teleports happen often for tablet users due to mapping nature of the input, sometimes inverstigating cursor teleports allows to detect replay bots or maybe even aim assist.\n4)Fast single tap is an inhumanly fast sequence of performed single tap hits. This detects cases when a poor-coded relax hack managed to singe tap a triplet or a stream on a high bpm map where a human wouldn't be able to do that. Beware that high bpm spam can also produce fast single taps even though it's humanly possible. But usually in this case the hits are not going to be 300s.\n5)Extra hit is a key press during gameplay time which did not look like an attempt to click a note. This usually happens when player is spamming or accidentally presses the second key. Such hits do not indicate any kind of hacking but the number of extra hits (especially 0 like in Gayz's replays) can provide a worthy statistical knowledge.\n6)Effortless miss is a miss that didn't have a corresponding hit attempt. Sometimes that happens during miss aimed notes using relax hack when it is poorly configured.\n7)Average time frame difference is equivalent to the period of cursor position scan event during the replay. This value is usually around 12-16ms for nomod plays and 17-22ms for DT plays (as the time goes faster, osu is scanning frames less frequent in the absolute value). A poor timewarp might not correctly encode the replay information which will result in effecient timewarp detection.\n8)Average key press time interval represents for how long the key are held for during note hits. Sliders and extra hits are not included. Lower values represent better finger control and inhumanly low values indicate timewarp or relax. This conclusion though would require exhausting amount of statistics.\n\nNOTE! Absolute most of the found values do not automatically indicate cheating and require thorough manual inverstigation. Do not jump to the conclusions without good evidence.");
+            var dialog = new ReportDialog("About")
+            {
+                textBox_Results =
+                {
+                    Text = @"Welcome to osu!ReplayAnalyzer.
+This program is intended to analyze osu! replays and output relevant information, mostly targeted at witchhunter.
+The provided information can be used to determine the probability of legitness of a player.
+
+The first thing you want to do after downloading and launching the app is Open osuDB, this will load your osu!beatmaps into the program.
+You'll only need to specify the path once, the program is going to remember the settings in a file and will load the DB automatically on startup next time.
+
+Terms explained:
+1. Pixel perfect hit is a hit done on the edge on the note rather than its center.
+Originally, pixel perfect hits happened often when a player using relax was late on hitting a note.
+Strictly, pixel perfect hits are only the ones that are PERFECTLY on the edge.
+However, the term is generalized by measure of so-called perfectness for every hit.
+Mathematically it is the distance between the cursor and the center of the note divided by the radius of the note.
+It is a value from 0 (perfectly centered note hit) to 1 (pixel perfect edge note hit). Values more than 1 consequently correspond to so-called attempted hits, which are technically misses.
+High number of pixel perfect hits indicates poor aim and probably usage of relax hack.
+
+2. Over-aim is a hit which happened after the cursor hovered the note, left it and then hovered again.
+This is also an indicator of poor aim, FCing maps with such inconsistency is fairly hard, so a high number of such moments across the replays of a certain player would suggest that they're relaxing.
+
+3. Cursor teleport is a large cursor movement within a single frame which has no derivative.
+This is equivalent to your intuitive definition of a teleport.
+Even though cursor teleports happen often for tablet users due to mapping nature of the input, sometimes inverstigating cursor teleports allows to detect replay bots or maybe even aim assist.
+
+4. Fast single tap is an inhumanly fast sequence of performed single tap hits.
+This detects cases when a poor-coded relax hack managed to singe tap a triplet or a stream on a high bpm map where a human wouldn't be able to do that.
+Beware that spamming keys at high BPM can also produce fast single taps even though it's humanly possible.
+But usually in this case the hits are not going to be 300s.
+
+5. Extra hit is a key press during gameplay time which did not look like an attempt to click a note.
+This usually happens when player is spamming or accidentally presses the second key.
+Such hits do not indicate any kind of hacking but the number of extra hits (especially 0) can provide a worthy statistical knowledge.
+
+6. Effortless miss is a miss that didn't have a corresponding hit attempt.
+Sometimes that happens during miss aimed notes using relax hack when it is poorly configured.
+
+7. Average frametime difference is equivalent to the period of cursor position scan event during the replay.
+This value is usually around 12.2-14.5ms for nomod plays and 16.5-22ms for DT plays (as the time goes faster, osu! is scanning frames less frequent in the absolute value).
+A poor timewarp might not correctly encode the replay information which will result in effecient timewarp detection.
+There's an automatic indicator of timewarp usage within this calculation, but it only applies to HT, DT and NC.
+Timewarp detection at nomod speed seemed to be very unreliable so we skipped it.
+If the program alerts about timewarp being used and the replay file doesn't look abnormal (e.g. missing all circles on purpose), then you can consider it as a positive.
+NEW: The second version of the average frametime difference algorithm only takes inputs where K1/K2/M1/M2 were not used, to prevent false positives on >=225BPM deathstream maps and also detect cheaters with abnormal playstyles.
+
+8. Average key press time interval represents for how long the key are held for during note hits.
+Sliders and extra hits are not included. Lower values represent better finger control and inhumanly low values indicate timewarp or relax.
+This conclusion though would require exhausting amount of statistics.
+
+NOTE!! Absolute most of the found values do not automatically indicate cheating and require manual investigation of the replay files.
+DO NOT jump into conclusions without good evidence.",
+                    HorizontalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Disabled,
+                    VerticalScrollBarVisibility = System.Windows.Controls.ScrollBarVisibility.Auto
+                },
+
+                Owner = GetWindow(this)
+            };
+
+
+            dialog.Show();
         }
     }
 }
