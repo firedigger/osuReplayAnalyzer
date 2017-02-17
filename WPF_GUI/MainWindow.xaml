@@ -8,8 +8,8 @@
         Title="osu!ReplayAnalyzer" Height="318.572" Width="480.98" Background="#FF252525" ResizeMode="CanMinimize">
     <Grid Margin="0,0,-6,0">
         <CheckBox x:Name="checkBox_AlertOutput" Content="Alert output" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,87,0,0" Background="White" Foreground="White" Height="15" Width="94" IsChecked="True" FontSize="10"/>
-        <CheckBox x:Name="checkBox_SaveToFile" Content="Save to file" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,116,0,0" Background="White" Foreground="White" Height="15" Width="94" IsChecked="False" FontSize="10"/>
-        <CheckBox x:Name="onlyMainInfo_checkbox" Content="Only Main info" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,141,0,0" Background="White" Foreground="White" Height="15" Width="105" IsChecked="False" FontSize="10"/>
+        <CheckBox x:Name="checkBox_SaveToFile" Content="Save to file" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,122,0,0" Background="White" Foreground="White" Height="15" Width="94" IsChecked="False" FontSize="10"/>
+        <CheckBox x:Name="onlyMainInfo_checkbox" Content="Only main information" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,157,0,0" Background="White" Foreground="White" Height="15" Width="146" IsChecked="False" FontSize="10"/>
         <ProgressBar x:Name="progressBar_Analyzing" HorizontalAlignment="Left" Width="445" Margin="10,244,0,0" Height="18" VerticalAlignment="Top"/>
         <Button x:Name="button_ChooseReplays" Content="Choose replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="105" Margin="10,15,0,0" Height="20" Click="button_ChooseReplays_Click" FontSize="10"/>
         <Button x:Name="button_AnalyzeReplays" Content="Analyze replays" HorizontalAlignment="Left" VerticalAlignment="Top" Width="105" Margin="10,48,0,0" Height="20" Click="button_AnalyzeReplays_Click" FontSize="10"/>
